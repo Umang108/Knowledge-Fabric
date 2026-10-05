@@ -1,0 +1,163 @@
+name: graphbase
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  neo4j:
+    # Local testing: Community (single database). For Enterprise set
+    # NEO4J_IMAGE=neo4j:5-enterprise, NEO4J_ACCEPT_LICENSE=yes and NEO4J_MODE=multi.
+    image: ${NEO4J_IMAGE:-neo4j:5-community}
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: ${NEO4J_ACCEPT_LICENSE:-no}
+      NEO4J_server_memory_heap_initial__size: ${NEO4J_HEAP:-512m}
+      NEO4J_server_memory_heap_max__size: ${NEO4J_HEAP:-512m}
+      NEO4J_server_memory_pagecache_size: ${NEO4J_PAGECACHE:-256m}
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - neo4jdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u $${NEO4J_AUTH%%/*} -p $${NEO4J_AUTH#*/} 'RETURN 1' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  chroma:
+    image: chromadb/chroma:${CHROMA_VERSION:-0.6.3}
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    ports:
+      - "${CHROMA_HOST_PORT:-8001}:8000"
+    volumes:
+      - chromadata:/chroma/chroma
+
+  # Host Ollama listening only on 127.0.0.1 (Linux): forward the Docker bridge
+  # address to it so containers can reach it without exposing Ollama to the LAN.
+  # Backend then uses OLLAMA_BASE_URL=http://host.docker.internal:11435
+  ollama-proxy:
+    image: alpine/socat:latest
+    profiles: ["ollama-proxy"]
+    network_mode: host
+    command: TCP-LISTEN:11435,bind=${OLLAMA_PROXY_BIND:-172.17.0.1},fork,reuseaddr TCP:127.0.0.1:11434
+    restart: unless-stopped
+
+  # Optional: run Ollama in a container instead of on the host
+  # (`docker compose --profile ollama up`, then OLLAMA_BASE_URL=http://ollama:11434).
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    volumes:
+      - ollamadata:/root/.ollama
+
+  # Optional local Keycloak for testing AUTH_PROVIDER=keycloak (dev mode, in-memory H2).
+  # Imports keycloak/graphbase-realm.json (realm, client and test users) on start.
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION:-26.0}
+    profiles: ["keycloak"]
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      # Tokens are issued for the browser-facing URL; the backend fetches keys via http://keycloak:8080
+      KC_HOSTNAME: ${KEYCLOAK_URL:-http://localhost:8080}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=10 -Xms128m -Xmx384m"
+    ports:
+      - "${KEYCLOAK_HOST_PORT:-8080}:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      NEO4J_URI: bolt://neo4j:7687
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      # overridable from the shell, e.g. AUTH_PROVIDER=keycloak docker compose up -d backend
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-local}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/pytest.ini:/app/pytest.ini:ro
+      - ./data:/data
+      - uploads:/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+
+  # MCP server for agents (python -m app.mcp_server). Same code and settings as the backend; agents sign in
+  # with Keycloak and send their access token, so it needs KEYCLOAK_URL / KEYCLOAK_REALM even when the web
+  # app uses local passwords.
+  mcp:
+    build: ./backend
+    command: ["python", "-m", "app.mcp_server"]
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      NEO4J_URI: bolt://neo4j:7687
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      MCP_PORT: "8100"
+    ports:
+      - "${MCP_HOST_PORT:-8100}:8100"
+    volumes:
+      - ./backend/app:/app/app
+      - uploads:/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+      - ./frontend/eslint.config.js:/app/eslint.config.js
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  neo4jdata:
+  chromadata:
+  ollamadata:
+  uploads:

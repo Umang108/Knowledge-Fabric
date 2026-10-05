@@ -1,0 +1,166 @@
+{
+  "realm": "graphbase",
+  "enabled": true,
+  "displayName": "Graphbase (local test)",
+  "accessTokenLifespan": 1800,
+  "clients": [
+    {
+      "clientId": "graphbase-app",
+      "name": "Graphbase",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "graphbase-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "graphbase-app",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "graphbase-mcp",
+      "name": "Graphbase MCP server (token audience only)",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "change-me-not-used-for-login",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "implicitFlowEnabled": false
+    },
+    {
+      "clientId": "graphbase-agent",
+      "name": "Graphbase agent",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "true",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "graphbase-mcp-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "graphbase-mcp",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "priya.nair",
+      "firstName": "Priya",
+      "lastName": "Nair",
+      "email": "priya.nair@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "arjun.mehta",
+      "firstName": "Arjun",
+      "lastName": "Mehta",
+      "email": "arjun.mehta@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "sneha.iyer",
+      "firstName": "Sneha",
+      "lastName": "Iyer",
+      "email": "sneha.iyer@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "karthik.r",
+      "firstName": "Karthik",
+      "lastName": "R",
+      "email": "karthik.r@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "meera.s",
+      "firstName": "Meera",
+      "lastName": "S",
+      "email": "meera.s@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "rohan.d",
+      "firstName": "Rohan",
+      "lastName": "D",
+      "email": "rohan.d@graphbase-retail.example",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
