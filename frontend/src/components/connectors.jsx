@@ -87,12 +87,12 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
     <form onSubmit={save} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div className="row">
         <div className="grow">
-          <label className="lbl" htmlFor="cn-name">Connection name</label>
+          <label className="lbl req" htmlFor="cn-name">Connection name</label>
           <input id="cn-name" className="inp" value={c.name} required maxLength={100}
                  placeholder="e.g. ServiceNow production" onChange={(e) => set("name", e.target.value)} />
         </div>
         <div style={{ width: 170 }}>
-          <label className="lbl" htmlFor="cn-kind">System</label>
+          <label className="lbl req" htmlFor="cn-kind">System</label>
           <select id="cn-kind" className="inp" value={c.kind} disabled={editing}
                   onChange={(e) => set("kind", e.target.value)}>
             {kinds.map((k) => <option key={k.kind} value={k.kind}>{k.label}</option>)}
@@ -100,7 +100,7 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
         </div>
       </div>
       <div>
-        <label className="lbl" htmlFor="cn-url">Base URL</label>
+        <label className="lbl req" htmlFor="cn-url">Base URL</label>
         <input id="cn-url" className="inp" value={c.base_url} required type="url"
                placeholder={PLACEHOLDER_URL[c.kind]} onChange={(e) => set("base_url", e.target.value)} />
       </div>
@@ -123,7 +123,7 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
       )}
       <div className="row">
         <div style={{ width: 200 }}>
-          <label className="lbl" htmlFor="cn-auth">Authentication</label>
+          <label className="lbl req" htmlFor="cn-auth">Authentication</label>
           <select id="cn-auth" className="inp" value={c.auth_type} onChange={(e) => set("auth_type", e.target.value)}>
             <option value="basic">User + password</option>
             <option value="oauth">OAuth client credentials</option>
@@ -131,13 +131,13 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
         </div>
         {oauth ? (
           <div className="grow">
-            <label className="lbl" htmlFor="cn-cid">Client ID</label>
+            <label className="lbl req" htmlFor="cn-cid">Client ID</label>
             <input id="cn-cid" className="inp" value={c.options.client_id || ""} required
                    onChange={(e) => opt("client_id", e.target.value)} />
           </div>
         ) : (
           <div className="grow">
-            <label className="lbl" htmlFor="cn-user">{isSap ? "Communication user" : "Integration user"}</label>
+            <label className="lbl req" htmlFor="cn-user">{isSap ? "Communication user" : "Integration user"}</label>
             <input id="cn-user" className="inp" value={c.username || ""} required autoComplete="off"
                    onChange={(e) => set("username", e.target.value)} />
           </div>
@@ -145,7 +145,7 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
       </div>
       {oauth && (
         <div>
-          <label className="lbl" htmlFor="cn-token">
+          <label className={`lbl${isSap ? " req" : ""}`} htmlFor="cn-token">
             Token URL{isSap ? "" : " (optional, defaults to /oauth_token.do)"}
           </label>
           <input id="cn-token" className="inp" value={c.options.token_url || ""} required={isSap}
@@ -154,7 +154,7 @@ export function ConnectionForm({ kinds, initial, onSaved, onCancel }) {
         </div>
       )}
       <div>
-        <label className="lbl" htmlFor="cn-secret">{oauth ? "Client secret" : "Password"}</label>
+        <label className={`lbl${editing ? "" : " req"}`} htmlFor="cn-secret">{oauth ? "Client secret" : "Password"}</label>
         <input id="cn-secret" className="inp" type="password" value={c.secret} autoComplete="new-password"
                required={!editing} placeholder={editing ? "Leave empty to keep the saved one" : ""}
                onChange={(e) => set("secret", e.target.value)} />
@@ -255,11 +255,13 @@ export function ConnectionsModal({ kinds, connections, reload, onClose }) {
                     {c.last_tested_at && <div className="muted small">{formatDate(c.last_tested_at, true)}</div>}
                   </td>
                   <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
-                    <button className="btn sec sm" onClick={() => test(c)} disabled={testing === c.id}>
-                      {testing === c.id ? "Testing…" : "Test"}
-                    </button>{" "}
-                    <button className="btn sec sm" onClick={() => setEditing(c)}>Edit</button>{" "}
-                    <button className="btn danger sm" onClick={() => remove(c)}>Delete</button>
+                    <span className="acts">
+                      <button className="act" onClick={() => test(c)} disabled={testing === c.id}>
+                        {testing === c.id ? "Testing…" : "Test"}
+                      </button>
+                      <button className="act" onClick={() => setEditing(c)}>Edit</button>
+                      <button className="act danger" onClick={() => remove(c)}>Delete</button>
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -350,7 +352,7 @@ export function DatasetPicker({ kinds, connection, kbType, value, onChange }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div className="row">
         <div className="grow">
-          <label className="lbl" htmlFor="ds-preset">What to pull</label>
+          <label className="lbl req" htmlFor="ds-preset">What to pull</label>
           <select id="ds-preset" className="inp" value={value.preset} onChange={(e) => pickPreset(e.target.value)}>
             {keys.map((k) => <option key={k} value={k}>{presets[k].label}</option>)}
             <option value={CUSTOM}>Custom tables</option>
@@ -392,12 +394,14 @@ export function DatasetPicker({ kinds, connection, kbType, value, onChange }) {
             )}
             <input className="inp sm" style={{ width: 90 }} type="number" min={1} value={d.limit}
                    placeholder="Limit" aria-label="Limit" onChange={(e) => edit(i, "limit", e.target.value)} />
-            <button type="button" className="btn sec sm" disabled={!d.source.trim()} onClick={() => show(d)}>
-              Preview
-            </button>
-            <button type="button" className="btn danger sm" aria-label="Remove table" onClick={() => drop(i)}>
-              ×
-            </button>
+            <span className="acts" style={{ marginLeft: 6 }}>
+              <button type="button" className="act" disabled={!d.source.trim()} onClick={() => show(d)}>
+                Preview
+              </button>
+              <button type="button" className="act danger" aria-label="Remove table" onClick={() => drop(i)}>
+                Remove
+              </button>
+            </span>
           </div>
         </div>
       ))}

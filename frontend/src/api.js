@@ -29,7 +29,7 @@ export async function api(path, { method = "GET", json, form, anonymous = false 
   const r = await fetch(`/api${path}`, { method, headers, body, credentials: "same-origin" });
   const data = await r.json().catch(() => null);
   if (r.status === 401 && !anonymous) {
-    window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    window.location.assign(`/login?expired=1&next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
     throw new ApiError(401, "Your session has expired");
   }
   if (!r.ok) throw new ApiError(r.status, messageFrom(data, r.status), data && data.detail);

@@ -55,12 +55,13 @@ export default function Login() {
   };
 
   return (
-    <div className="split" style={{ display: "flex", minHeight: "100vh" }}>
-      <div style={{ width: "50%", background: "#0d5048", color: "#fff", padding: "56px 72px", display: "flex",
+    <div className="split login-shell" style={{ display: "flex", minHeight: "100vh" }}>
+      <div className="login-showcase" style={{ width: "50%", background: "#0d5048", color: "#fff", padding: "56px 72px", display: "flex",
                     flexDirection: "column", justifyContent: "space-between" }}>
-        <div className="logo" style={{ color: "#fff" }}><div className="mark" style={{ background: "#7fd3c1" }} />Graphbase</div>
+        <div className="logo" style={{ color: "#fff" }}><div className="mark" style={{ background: "#7fd3c1" }} />TCS Knowledge Fabric</div>
         <Network />
-        <div>
+        <div className="login-copy">
+          <div className="login-eyebrow">KNOWLEDGE WORKSPACE</div>
           <div style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.15, maxWidth: 540 }}>
             Turn spreadsheets and documents into answers you can trace.
           </div>
@@ -69,9 +70,10 @@ export default function Login() {
           </div>
         </div>
       </div>
-      <div style={{ width: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
-        <form onSubmit={submit} style={{ width: 400, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="login-form-side" style={{ width: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
+        <form className="login-form" onSubmit={submit} style={{ width: 400, display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
+            <div className="login-form-kicker">WELCOME BACK</div>
             <h1>Sign in</h1>
             <div className="sub">
               {cfg?.provider === "keycloak" ? "Use your organisation account. You will be sent to the company sign-in page."
@@ -81,16 +83,19 @@ export default function Login() {
           {cfg?.provider !== "keycloak" && (
             <>
               <div>
-                <label className="lbl" htmlFor="uid">User ID</label>
+                <label className="lbl req" htmlFor="uid">User ID</label>
                 <input id="uid" className="inp" autoComplete="username" value={userId}
                        onChange={(e) => setUserId(e.target.value)} required autoFocus />
               </div>
               <div>
-                <label className="lbl" htmlFor="pw">Password</label>
+                <label className="lbl req" htmlFor="pw">Password</label>
                 <input id="pw" className="inp" type="password" autoComplete="current-password" value={password}
                        onChange={(e) => setPassword(e.target.value)} required />
               </div>
             </>
+          )}
+          {params.get("expired") && !error && (
+            <div className="notice" role="status">Your session ended. Please sign in again.</div>
           )}
           {error && <div className="error" role="alert">{error}</div>}
           <button className="btn" type="submit" disabled={!cfg || busy}>

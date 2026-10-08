@@ -7,7 +7,7 @@ Two ways to sign in:
   * password (Resource Owner Password grant): for scripts and tests. Needs "Direct access grants" on the
     client in Keycloak; avoid it for real users.
 
-The access token is sent to the Graphbase MCP server as `Authorization: Bearer ...` by KeycloakAuth, which
+The access token is sent to the TCS Knowledge Fabric MCP server as `Authorization: Bearer ...` by KeycloakAuth, which
 refreshes it shortly before it expires and once more if the server answers 401.
 """
 

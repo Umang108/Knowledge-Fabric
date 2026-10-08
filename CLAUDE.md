@@ -5,7 +5,7 @@ Read this file fully before writing code. UI mockups are in `docs/mockups/*.png`
 ## Stack (fixed)
 - Frontend: React (Vite)
 - Backend: FastAPI (Python), LangChain / LangGraph
-- Graph DB: Neo4j | Vector DB: ChromaDB | Relational DB: Postgres
+- Graph DB: Neo4j | Vector store: TurboQuant (turbovec index files + chunk text in Postgres) | Relational DB: Postgres
 - Everything runs via Docker Compose
 - LLM is swappable: **Ollama model is active**; **Azure OpenAI GPT-4.1 code is written but commented out**. Put both behind one factory (`get_llm()`, `get_embeddings()`) selected by an env var, so switching is a one-line change.
 
@@ -22,13 +22,13 @@ Read this file fully before writing code. UI mockups are in `docs/mockups/*.png`
 ## Behaviour
 **KG creation flow:** user uploads CSV/XLSX + fills name/domain/sub-domain -> backend runs in background: file goes to the LLM, which returns nodes, entities, relationships and Cypher -> status shown on screen 3 -> Review screen (4) lets user edit/delete -> on Submit, build the graph in Neo4j from the approved schema and store it.
 
-**RAG flow:** upload PDF/DOCX/TXT -> chunk, embed, store in ChromaDB automatically in the background. No review screen.
+**RAG flow:** upload PDF/DOCX/TXT -> chunk, embed, store in the TurboQuant index automatically in the background. No review screen.
 
 **Ownership & access:** the user who creates a knowledge base becomes its owner. Only the owner can grant or revoke access to other users. Every grant/revoke is logged with who did it.
 
-**Additional data pipeline:** for an existing KG, new CSV/XLSX is ingested using the already-approved schema (no review screen, merge on key properties, report rejected rows). For RAG bases, new docs are chunked and added to the same Chroma collection.
+**Additional data pipeline:** for an existing KG, new CSV/XLSX is ingested using the already-approved schema (no review screen, merge on key properties, report rejected rows). For RAG bases, new docs are chunked and added to the same TurboQuant index.
 
-**Chat:** user picks a knowledge base they own or have access to. Graph bases: LangGraph flow that generates Cypher, runs it on Neo4j, answers from results (show Cypher + path). RAG bases: retrieve from Chroma and answer. Enforce access on the backend for every query, never only in the UI.
+**Chat:** user picks a knowledge base they own or have access to. Graph bases: LangGraph flow that generates Cypher, runs it on Neo4j, answers from results (show Cypher + path). RAG bases: retrieve from the TurboQuant index and answer. Enforce access on the backend for every query, never only in the UI.
 
 ## Postgres tables
 `kb_access`: id, kb_name, user_id, role (owner|user), granted_by, granted_at, revoked_at (null while active). This is the audit trail.
@@ -63,6 +63,10 @@ Supporting tables (not in the mockups): `kb_catalog` (one row per KB: type, owne
 - PII review: findings carry `status` (detected|confirmed|dismissed) and `source` (llm|rules|user); `extraction.clean_pii` validates user edits; only `active_pii` (not dismissed) drives badges and `kb_pii_fields`. GUID/hex ID columns are never PII.
 - MCP server (`app/mcp_server.py`, `app/mcp_auth.py`): Keycloak Bearer tokens only (issuer, audience `MCP_AUDIENCE`, expiry, scopes); every tool goes through `kb.require_access`. `query_graph` uses `GraphStore.run_readonly`, which refuses any node pattern without the KB label in single mode. Needs fastapi >= 0.120 (Starlette 1.x).
 - Connectors (`app/connectors/`): tables become an .xlsx in the KB upload folder and reuse the normal pipelines; connector graphs are relaxed (`required: false`, `on_unknown: "skip"`). Secrets encrypted with `SECRET_KEY`, never returned by the API. Integer keys named after the entity (SAP `SalesOrder`) are valid keys.
+- Langfuse (`app/observability.py`): use `trace_context` / `observe_span` / `observe_llm` only. Langfuse keeps its own OpenTelemetry TracerProvider (never the global one: FastAPI >= 0.120 would then export every HTTP request); only the root observation sets trace name/user/session; never flush inside a request or job.
+- Product name shown to users: **TCS Knowledge Fabric**. Internal identifiers stay (`graphbase_agent` package, `graphbase-*` Keycloak clients, `GRAPHBASE_MCP_URL`, `graphbase_session` cookie, `X-Requested-With: graphbase`) so existing deployments keep working.
+- Guardrails (`app/guardrails.py`) run inside `chat.graph_answer` / `chat.rag_answer` (so web and MCP share them); PII masking uses the NIST levels from `app/nist_pii.py`. Chat turns are saved per conversation (last 10 per user).
+- KB names: `^[A-Za-z][A-Za-z0-9_]{2,62}$`, unique case-insensitively (`kb.validate_name` + unique index on lower()).
 - Don't run `ruff format` on whole folders (teammate files are not ruff-formatted); format only files you create.
 
 ## Local environment

@@ -72,16 +72,20 @@ def test_clean_pii_validates_and_normalises(draft):
     )
     by_col = {p["column"]: p for p in cleaned}
     assert len(cleaned) == 2  # one entry per column, the last one wins
-    assert by_col["Contact Person"] == {
+    person = by_col["Contact Person"]
+    assert {k: person[k] for k in ("sheet", "column", "category", "confidence", "reason", "detected_by", "status")} == {
         "sheet": "Suppliers",
         "column": "Contact Person",
         "category": "person_name",
-        "sensitivity": "low",
         "confidence": 1.0,
         "reason": "Marked as PII on the Review screen",
         "detected_by": "user",
         "status": "confirmed",
     }
+    # NIST SP 800-122: a name is a direct identifier with low field sensitivity; nothing sensitive is active
+    # in the same records (the e-mail was dismissed), so the impact stays low
+    assert person["nist_identifier"] == "direct" and person["nist_impact"] == "low" and person["sensitivity"] == "low"
+    assert any(f.startswith("identifiability") for f in person["nist_factors"]) and person["nist_controls"]
     assert by_col["Contact Email"]["status"] == "dismissed" and by_col["Contact Email"]["confidence"] == 1.0
 
     with pytest.raises(gs.SchemaError) as exc:
@@ -122,7 +126,10 @@ def test_reviewer_marks_unmarks_and_recategorises(client, draft):
 
     preview = client.post(f"/api/kbs/{KB}/review/preview", headers=p, json={"schema": edited})
     assert preview.status_code == 200, preview.text
-    assert _pii(preview.json()["schema"], "Suppliers", "Supplier Name")["sensitivity"] == "low"
+    name = _pii(preview.json()["schema"], "Suppliers", "Supplier Name")
+    # a name in the same records as a bank account: NIST context factor raises low -> moderate
+    assert name["nist_impact"] == "moderate" and name["sensitivity"] == "medium"
+    assert any("Bank Account" in f for f in name["nist_factors"])
 
     saved = client.put(f"/api/kbs/{KB}/review", headers=p, json={"schema": edited})
     assert saved.status_code == 200, saved.text

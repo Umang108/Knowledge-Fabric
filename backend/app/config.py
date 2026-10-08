@@ -23,8 +23,10 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_mode: str = "single"  # single | multi
 
-    chroma_host: str = "localhost"
-    chroma_port: int = 8001
+    # RAG vector store: TurboQuant indexes (app/vectorstore.py). The backend and the MCP server must use the same
+    # folder. Default: backend/data/vectors.
+    vector_dir: str = str(Path(__file__).resolve().parents[1] / "data" / "vectors")
+    turboquant_bits: int = 4  # bits per coordinate for new indexes: 4 (most accurate), 3 or 2 (smallest)
 
     llm_provider: str = "ollama"  # ollama | azure
     ollama_base_url: str = "http://localhost:11434"
@@ -35,6 +37,27 @@ class Settings(BaseSettings):
     full_sheet_llm_analysis: bool = False
     max_llm_rows: int = 500
     max_llm_chars: int = 120_000
+    # Chat guardrails (app/guardrails.py)
+    guardrail_mask_pii: str = "high"  # mask PII at/above this NIST impact level: none | low | moderate | high
+    guardrail_min_relevance: float = 0.0  # documents: below this best-passage score answer "not found" (0 = off)
+    guardrail_llm_check: bool = False  # extra model-based screening of questions (adds one LLM call)
+
+    # RAGAS evaluation (python -m app.cli eval-rag; app/eval_rag.py). Empty = use the app's own chat / embedding
+    # model as the judge. A stronger judge than the model under test gives more reliable scores.
+    ragas_judge_model: str = ""  # Azure deployment name or Ollama model
+    ragas_judge_embed_model: str = ""
+    ragas_report_dir: str = str(Path(__file__).resolve().parents[1] / "reports" / "ragas")
+
+    # Langfuse tracing (app/observability.py); off unless both keys are set
+    langfuse_secret_key: str = ""
+    langfuse_public_key: str = ""
+    langfuse_base_url: str = "https://cloud.langfuse.com"  # EU cloud; https://us.cloud.langfuse.com for US
+    langfuse_environment: str = ""  # e.g. dev / prod, to separate traces in one project
+    langfuse_timeout: int = 20  # seconds per export (runs in the background, never in a request)
+    langfuse_flush_at: int = 50  # spans per export batch
+    langfuse_flush_interval: float = 2.0  # seconds between background exports
+    langfuse_max_field_chars: int = 10_000  # longer prompt/answer text is trimmed in traces
+    langfuse_capture_content: bool = True  # false: send timings, models and token usage only, no prompt text
 
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
@@ -67,7 +90,7 @@ class Settings(BaseSettings):
     connector_ca_bundle: str = ""  # CA file for source systems with an internal certificate authority
 
     # MCP server (app/mcp_server.py). Agents call it with a Keycloak access token (Bearer); the token's
-    # preferred_username is the Graphbase user, so every tool sees exactly the KBs that user may access.
+    # preferred_username is the TCS Knowledge Fabric user, so every tool sees exactly the KBs that user may access.
     mcp_host: str = "localhost"
     mcp_port: int = 8100
     mcp_public_url: str = "http://localhost:8100"  # how agents reach the MCP server (no /mcp suffix)

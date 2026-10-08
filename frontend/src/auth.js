@@ -14,6 +14,14 @@ export async function currentUser() {
   return r.ok ? r.json() : null;
 }
 
+// {user} when signed in; {expired: true} when the browser had a session that timed out or was signed out.
+export async function sessionState() {
+  const r = await fetch("/api/auth/me", { credentials: "same-origin" });
+  if (r.ok) return { user: await r.json() };
+  const body = await r.json().catch(() => ({}));
+  return { user: null, expired: body?.detail === "Your session has ended" };
+}
+
 export async function localLogin(userId, password) {
   const { user } = await api("/auth/login", { method: "POST", json: { user_id: userId, password }, anonymous: true });
   return user;

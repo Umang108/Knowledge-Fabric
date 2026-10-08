@@ -1,7 +1,7 @@
 """The MCP server: Keycloak bearer tokens, per-user access to knowledge bases, and the tools.
 
 Runs the real MCP server (streamable HTTP, in a thread) against a stand-in Keycloak realm (real HTTP, real
-RS256 tokens), real Postgres and a real Chroma server. Neo4j calls go to a stand-in that still applies the real
+RS256 tokens), real Postgres and the real TurboQuant store. Neo4j calls go to a stand-in that still applies the real
 read-only check and KB scoping, so the safety path is the production one.
 """
 
@@ -101,14 +101,14 @@ def world(settings, keycloak, monkeypatch):
     with get_conn() as conn:
         conn.execute("UPDATE kb_catalog SET approved_at = now() WHERE kb_name = %s", (GRAPH,))
 
-    kb.create(priya, DOCS, "rag", "Retail", "Policies", f"chroma:{DOCS}")
-    rag.drop_collection(DOCS)
+    kb.create(priya, DOCS, "rag", "Retail", "Policies", f"turboquant:{DOCS}")
+    rag.drop_index(DOCS)
     for name in ("returns_policy.pdf", "warehouse_sop.txt"):
         rag.store_chunks(DOCS, name, rag.chunk(rag.extract_text(Path(SAMPLES / name), name)))
     kb.set_status(DOCS, "ready")
     kb.grant(priya, DOCS, "meera.s")
     yield {"schema": schema}
-    rag.drop_collection(DOCS)
+    rag.drop_index(DOCS)
 
 
 @pytest.fixture
@@ -249,7 +249,7 @@ def test_disabled_user_is_refused(mcp_url, keycloak):
 def test_unknown_user_refused_when_auto_provisioning_is_off(world, keycloak, settings):
     settings(MCP_AUTO_PROVISION_USERS="false")
     with ServerThread(mcp_server.build_server().streamable_http_app()) as srv:
-        assert "not a Graphbase user" in err(call(srv.url, keycloak.mint("stranger"), "whoami"))
+        assert "not a TCS Knowledge Fabric user" in err(call(srv.url, keycloak.mint("stranger"), "whoami"))
 
 
 # ------------------------------------------------------------------ tools

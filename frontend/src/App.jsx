@@ -1,24 +1,29 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { currentUser } from "./auth.js";
-import { TopBar, UserContext } from "./components/common.jsx";
+import { sessionState } from "./auth.js";
+import { SessionWatcher, TopBar, UserContext } from "./components/common.jsx";
 import Access from "./pages/Access.jsx";
 import AddData from "./pages/AddData.jsx";
 import Chat from "./pages/Chat.jsx";
 import Login from "./pages/Login.jsx";
 import Processing from "./pages/Processing.jsx";
 import Review from "./pages/Review.jsx";
+import Sessions from "./pages/Sessions.jsx";
 import Workspace from "./pages/Workspace.jsx";
 
 // The server decides whether the session is valid; the UI only asks who is signed in.
 function Protected() {
   const location = useLocation();
   const [user, setUser] = useState(undefined);
+  const [expired, setExpired] = useState(false);
   useEffect(() => {
-    currentUser().then(setUser).catch(() => setUser(null));
+    sessionState()
+      .then((s) => { setExpired(!!s.expired); setUser(s.user); })
+      .catch(() => setUser(null));
   }, []);
   if (user === null) {
-    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?${expired ? "expired=1&" : ""}next=${next}`} replace />;
   }
   if (!user) return <div className="page muted">Loading…</div>;
   return (
@@ -26,6 +31,7 @@ function Protected() {
       <div className="app">
         <TopBar />
         <Outlet />
+        <SessionWatcher />
       </div>
     </UserContext.Provider>
   );
@@ -43,6 +49,7 @@ export default function App() {
           <Route path="/access" element={<Access />} />
           <Route path="/add-data" element={<AddData />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/sessions" element={<Sessions />} />
         </Route>
         <Route path="*" element={<Navigate to="/workspace" replace />} />
       </Routes>

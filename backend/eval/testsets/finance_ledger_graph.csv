@@ -1,0 +1,33 @@
+id,question,reference
+1,What is the amount of journal entry JE-202600001?,"Journal entry JE-202600001 has an amount of 162,118.32 INR."
+2,Which account name is associated with journal entry JE-202600001?,Journal entry JE-202600001 is associated with the Cloud Hosting account.
+3,Which vendor is associated with journal entry JE-202600001?,Journal entry JE-202600001 is associated with Amazon Web Services.
+4,Who approved journal entry JE-202600001?,Journal entry JE-202600001 was approved by Ananya Das.
+5,When was journal entry JE-202600001 posted?,Journal entry JE-202600001 was posted on 15/09/2026.
+6,Which account has the highest total amount?,"The account with the highest total amount is Cloud Hosting, with 15,981,175.32 INR."
+7,Which vendor has the highest total transaction amount?,"The vendor with the highest total transaction amount is Amazon Web Services, with 21,851,669.95 INR."
+8,Which vendor appears in the most transactions?,"Amazon Web Services appears in the most transactions, with 110 transactions."
+9,Which cost centre has the highest total amount?,"CC-MKT has the highest total amount, totaling 13,847,910.78 INR."
+10,Which account name has the most transactions?,"Logistics has the most transactions, with 71 transactions."
+11,How many transactions are associated with the Logistics account?,There are 71 transactions associated with the Logistics account.
+12,What is the total amount recorded for the Logistics account?,"The total amount recorded for the Logistics account is 7,709,425.75 INR."
+13,How many transactions are associated with Amazon Web Services?,There are 110 transactions associated with Amazon Web Services.
+14,What is the total amount of transactions associated with Amazon Web Services?,"The total amount of transactions associated with Amazon Web Services is 21,851,669.95 INR."
+15,What is the earliest posting date in the ledger?,The earliest posting date in the ledger is 01/04/2026.
+16,What is the latest posting date in the ledger?,The latest posting date in the ledger is 25/09/2026.
+17,Which month has the highest total transaction amount?,"August 2026 has the highest total transaction amount, totaling 11,873,795.27 INR."
+18,Which journal entry has the highest transaction amount?,"Journal entry JE-202600398 has the highest transaction amount at 396,305.86 INR."
+19,What currencies are present in the ledger?,The currencies present in the ledger are INR.
+20,How many journal entries are in the ledger?,The ledger contains 480 journal entries.
+21,Which cost centre has the most transactions?,"CC-MKT has the most transactions, with 102 transactions."
+22,Which account and vendor combination occurs most frequently?,"The Cloud Hosting account with Amazon Web Services occurs most frequently, with 58 transactions."
+23,Who approved the most journal entries?,"Mary Krishnan approved the most journal entries, with 91 approvals."
+24,What is the average transaction amount in the ledger?,"The average transaction amount is 121,922.48 INR."
+25,What is the highest transaction amount recorded for the Cloud Hosting account?,"The highest transaction for the Cloud Hosting account is 396,305.86 INR, recorded in journal entry JE-202600398."
+26,What is the highest transaction amount recorded for the Logistics account?,"The highest transaction for the Logistics account is 249,009.13 INR, recorded in journal entry JE-202600337."
+27,What is the highest transaction amount recorded for the Outsourcing account?,"The highest transaction for the Outsourcing account is 243,098.92 INR, recorded in journal entry JE-202600452."
+28,What is the highest transaction amount recorded for the Telecom account?,"The highest transaction for the Telecom account is 248,323.79 INR, recorded in journal entry JE-202600460."
+29,How many transactions are recorded under cost centre CC-MKT?,There are 102 transactions recorded under cost centre CC-MKT.
+30,How many transactions are recorded under cost centre CC-FIN?,There are 100 transactions recorded under cost centre CC-FIN.
+31,How many transactions are recorded under cost centre CC-HR?,There are 97 transactions recorded under cost centre CC-HR.
+32,How many transactions are recorded under cost centre CC-OPS?,There are 94 transactions recorded under cost centre CC-OPS.

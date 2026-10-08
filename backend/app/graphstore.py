@@ -15,6 +15,7 @@ import threading
 from neo4j import READ_ACCESS, Driver, GraphDatabase, unit_of_work
 
 from app.config import get_settings
+from app.observability import observe_span
 
 _driver: Driver | None = None
 _lock = threading.Lock()
@@ -126,20 +127,21 @@ class GraphStore:
 
     # -------------------------------------------------------------- chat queries (untrusted Cypher)
     def run_readonly(self, cypher: str, params: dict | None = None, limit: int = 200, timeout: float = 30.0):
-        check_read_only(cypher)
-        scoped = scope_cypher(cypher, self.kb_label) if self.kb_label else cypher
+        with observe_span("Neo4j", {"knowledge_base": self.kb_name}):
+            check_read_only(cypher)
+            scoped = scope_cypher(cypher, self.kb_label) if self.kb_label else cypher
 
-        def work(tx):
-            result = tx.run(scoped, params or {})
-            rows = []
-            for rec in result:
-                rows.append(rec.data())
-                if len(rows) >= limit:
-                    break
-            return rows
+            def work(tx):
+                result = tx.run(scoped, params or {})
+                rows = []
+                for rec in result:
+                    rows.append(rec.data())
+                    if len(rows) >= limit:
+                        break
+                return rows
 
-        with self.driver.session(database=self.database, default_access_mode=READ_ACCESS) as session:
-            return scoped, session.execute_read(unit_of_work(timeout=timeout)(work))
+            with self.driver.session(database=self.database, default_access_mode=READ_ACCESS) as session:
+                return scoped, session.execute_read(unit_of_work(timeout=timeout)(work))
 
 
 # ------------------------------------------------------------------ query safety

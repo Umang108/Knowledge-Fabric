@@ -1,7 +1,7 @@
 """Shared plumbing for source-system connectors (ServiceNow, SAP).
 
 A connector reads tables from a remote system and returns plain rows. app/connectors/pipeline.py writes them
-into a workbook (one sheet per table) or into text documents, and the normal Graphbase pipelines take over:
+into a workbook (one sheet per table) or into text documents, and the normal TCS Knowledge Fabric pipelines take over:
 LLM extraction + Review for graphs, chunk + embed for RAG, and add-data for later refreshes.
 """
 

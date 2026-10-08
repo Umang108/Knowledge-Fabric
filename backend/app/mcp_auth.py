@@ -8,7 +8,7 @@ Keycloak issued to the person using the agent. Every request's token is checked 
   * audience contains MCP_AUDIENCE                          (Keycloak audience mapper on the agent's client)
   * not expired, typ == "Bearer" (an ID or refresh token is not an access token)
   * every scope in MCP_REQUIRED_SCOPES is present
-  * preferred_username is present: it is the Graphbase user_id
+  * preferred_username is present: it is the TCS Knowledge Fabric user_id
 
 Tools then act as that user: `kb.require_access` decides what the user may see, exactly as in the web app.
 """
@@ -91,7 +91,7 @@ class KeycloakTokenVerifier:
 
 
 def user_for_claims(claims: dict) -> CurrentUser:
-    """The Graphbase user behind a verified token. A Keycloak user who has never signed in to the web app
+    """The TCS Knowledge Fabric user behind a verified token. A Keycloak user who has never signed in to the web app
     gets a users row (MCP_AUTO_PROVISION_USERS), with no access to anything until an owner grants it."""
     user_id = claims["preferred_username"]
     with get_conn() as conn:
@@ -108,7 +108,7 @@ def user_for_claims(claims: dict) -> CurrentUser:
                 "SELECT user_id, display_name, email, is_active FROM users WHERE user_id = %s", (user_id,)
             ).fetchone()
     if row is None:
-        raise PermissionError(f"{user_id} is not a Graphbase user; ask an administrator to add them")
+        raise PermissionError(f"{user_id} is not a TCS Knowledge Fabric user; ask an administrator to add them")
     if not row["is_active"]:
-        raise PermissionError(f"{user_id} is disabled in Graphbase")
+        raise PermissionError(f"{user_id} is disabled in TCS Knowledge Fabric")
     return CurrentUser(row["user_id"], row["display_name"], row["email"])

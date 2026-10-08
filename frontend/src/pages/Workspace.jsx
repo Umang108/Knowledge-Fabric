@@ -24,8 +24,7 @@ const BUSY = ["extracting", "building", "ingesting"];
 const suggestName = (file, kind) =>
   file.name
     .replace(/\.[^.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/[^A-Za-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .replace(/^(\d)/, "kb_$1")
     .slice(0, 55) + (kind === "graph" ? "_kg" : "_rag");
@@ -142,9 +141,7 @@ export default function Workspace() {
       if (mode === "graph") {
         navigate(`/kbs/${r.kb_name}/jobs/${r.job_id}`);
       } else {
-        setRagRuns({ kb: r.kb_name, runs: [] });
-        reset();
-        load();
+        navigate(`/kbs/${r.kb_name}/jobs/${r.job_id}`);
       }
     } catch (err) {
       setError(err);
@@ -178,7 +175,7 @@ export default function Workspace() {
     if (kb.status === "awaiting_review" && kb.role === "owner")
       primary = (
         <button
-          className="btn sec sm"
+          className="act"
           onClick={() => navigate(`/kbs/${kb.kb_name}/review`)}
         >
           Review
@@ -187,7 +184,7 @@ export default function Workspace() {
     else if (BUSY.includes(kb.status) && kb.last_job_id)
       primary = (
         <button
-          className="btn sec sm"
+          className="act"
           onClick={() => navigate(`/kbs/${kb.kb_name}/jobs/${kb.last_job_id}`)}
         >
           View progress
@@ -200,7 +197,7 @@ export default function Workspace() {
     )
       primary = (
         <button
-          className="btn sec sm"
+          className="act"
           onClick={async () => {
             try {
               const r = await api(`/kbs/${kb.kb_name}/extract`, {
@@ -218,7 +215,7 @@ export default function Workspace() {
     else if (kb.status === "ready" && kb.role === "owner")
       primary = (
         <button
-          className="btn sec sm"
+          className="act"
           onClick={() => navigate(`/access?kb=${kb.kb_name}`)}
         >
           Manage access
@@ -227,7 +224,7 @@ export default function Workspace() {
     else if (kb.status === "ready")
       primary = (
         <button
-          className="btn sec sm"
+          className="act"
           onClick={() => navigate(`/chat?kb=${kb.kb_name}`)}
         >
           Chat
@@ -235,10 +232,10 @@ export default function Workspace() {
       );
     if (kb.role !== "owner") return primary;
     return (
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+      <div className="acts" style={{ justifyContent: "flex-end" }}>
         {primary}
         <button
-          className="btn danger sm"
+          className="act danger"
           onClick={() => remove(kb)}
           disabled={deleting === kb.kb_name}
         >
@@ -261,23 +258,24 @@ export default function Workspace() {
 
   return (
     <div
-      className="split"
+      className="split workspace-page"
       style={{ display: "flex", flexGrow: 1, minHeight: 0 }}
     >
       <aside
+        className="workspace-sidebar"
         style={{
-          width: 380,
+          width: 340,
           background: "#fff",
           borderRight: "1px solid var(--line)",
-          padding: 24,
+          padding: 16,
           display: "flex",
           flexDirection: "column",
-          gap: 20,
+          gap: 12,
         }}
       >
         <div className="section">Upload data</div>
         <div
-          className="card"
+          className={`card workspace-upload-card workspace-source-card${mode === "rag" ? " active" : ""}`}
           style={{
             padding: 18,
             display: "flex",
@@ -322,7 +320,7 @@ export default function Workspace() {
           </div>
         </div>
         <div
-          className="card"
+          className={`card workspace-upload-card workspace-source-card${mode === "graph" ? " active" : ""}`}
           style={{
             padding: 18,
             display: "flex",
@@ -377,7 +375,7 @@ export default function Workspace() {
           )}
         </div>
         <div
-          className="card"
+          className={`card workspace-upload-card workspace-source-card${fromSource ? " active" : ""}`}
           style={{
             padding: 18,
             display: "flex",
@@ -451,15 +449,16 @@ export default function Workspace() {
         />
       )}
 
-      <main className="page" style={{ minWidth: 0 }}>
-        <div>
+      <main className="page workspace-main" style={{ minWidth: 0 }}>
+        <div className="workspace-heading">
+          <div className="workspace-kicker">YOUR DATA WORKSPACE</div>
           <h1>Create knowledge base</h1>
           <div className="sub">
             You become the owner and are the only person who can grant access.
           </div>
         </div>
         <form
-          className="card"
+          className="card workspace-create-form"
           onSubmit={create}
           style={{
             padding: 24,
@@ -491,7 +490,7 @@ export default function Workspace() {
             />
           )}
           <div>
-            <label className="lbl" htmlFor="kbname">
+            <label className="lbl req" htmlFor="kbname">
               {kbType === "graph"
                 ? "Knowledge graph name"
                 : "Knowledge base name"}
@@ -500,16 +499,16 @@ export default function Workspace() {
               id="kbname"
               className="inp"
               value={form.name}
-              placeholder="e.g. retail_supply_chain_kg"
-              pattern="[a-z][a-z0-9_]{2,62}"
-              title="3-63 characters: lowercase letters, digits and underscores"
+              placeholder="e.g. Retail_Supply_Chain_KG"
+              pattern="[A-Za-z][A-Za-z0-9_]{2,62}"
+              title="3-63 characters: letters (upper or lower case), digits and underscores, starting with a letter"
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
             />
           </div>
           <div className="row">
             <div className="grow">
-              <label className="lbl" htmlFor="domain">
+              <label className="lbl req" htmlFor="domain">
                 Domain
               </label>
               <input
@@ -522,7 +521,7 @@ export default function Workspace() {
               />
             </div>
             <div className="grow">
-              <label className="lbl" htmlFor="sub">
+              <label className="lbl req" htmlFor="sub">
                 Sub-domain
               </label>
               <input
@@ -565,8 +564,11 @@ export default function Workspace() {
           </div>
         </form>
 
-        <div className="section">Your knowledge bases</div>
-        <div className="card" style={{ overflowX: "auto" }}>
+        <div className="workspace-list-heading">
+          <div className="section">Your knowledge bases</div>
+          <span className="muted small">{kbs?.length || 0} total</span>
+        </div>
+        <div className="card workspace-kb-table" style={{ overflowX: "auto" }}>
           <table>
             <thead>
               <tr>
@@ -575,7 +577,7 @@ export default function Workspace() {
                 <th>Domain / sub-domain</th>
                 <th>Your role</th>
                 <th>Status</th>
-                <th />
+                <th style={{ width: 210 }} />
               </tr>
             </thead>
             <tbody>

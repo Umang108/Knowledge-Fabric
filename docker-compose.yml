@@ -38,16 +38,6 @@ services:
       timeout: 10s
       retries: 30
 
-  chroma:
-    image: chromadb/chroma:${CHROMA_VERSION:-0.6.3}
-    environment:
-      IS_PERSISTENT: "TRUE"
-      ANONYMIZED_TELEMETRY: "FALSE"
-    ports:
-      - "${CHROMA_HOST_PORT:-8001}:8000"
-    volumes:
-      - chromadata:/chroma/chroma
-
   # Host Ollama listening only on 127.0.0.1 (Linux): forward the Docker bridge
   # address to it so containers can reach it without exposing Ollama to the LAN.
   # Backend then uses OLLAMA_BASE_URL=http://host.docker.internal:11435
@@ -95,16 +85,18 @@ services:
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       # overridable from the shell, e.g. AUTH_PROVIDER=keycloak docker compose up -d backend
       AUTH_PROVIDER: ${AUTH_PROVIDER:-local}
-      CHROMA_HOST: chroma
-      CHROMA_PORT: "8000"
+      VECTOR_DIR: /vectors  # TurboQuant index files; shared with the mcp service
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/tests:/app/tests
       - ./backend/pytest.ini:/app/pytest.ini:ro
+      - ./backend/eval:/app/eval:ro  # RAGAS test sets
+      - ./backend/reports:/app/reports  # RAGAS reports
       - ./data:/data
       - uploads:/uploads
+      - vectors:/vectors
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -112,8 +104,6 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
-      chroma:
-        condition: service_started
 
   # MCP server for agents (python -m app.mcp_server). Same code and settings as the backend; agents sign in
   # with Keycloak and send their access token, so it needs KEYCLOAK_URL / KEYCLOAK_REALM even when the web
@@ -127,14 +117,15 @@ services:
       POSTGRES_PORT: "5432"
       NEO4J_URI: bolt://neo4j:7687
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
-      CHROMA_HOST: chroma
-      CHROMA_PORT: "8000"
+      VECTOR_DIR: /vectors  # must be the same index files as the backend
       MCP_PORT: "8100"
+      MCP_HOST: 0.0.0.0  # inside the container; the default (localhost) would not be reachable via the port mapping
     ports:
       - "${MCP_HOST_PORT:-8100}:8100"
     volumes:
       - ./backend/app:/app/app
       - uploads:/uploads
+      - vectors:/vectors
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -158,6 +149,6 @@ services:
 volumes:
   pgdata:
   neo4jdata:
-  chromadata:
+  vectors:
   ollamadata:
   uploads:

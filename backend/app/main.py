@@ -8,16 +8,36 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
 
-from app import jobs, rag
+from app import jobs, rag, vectorstore
 from app.api import auth as auth_api
 from app.api import connectors as connectors_api
+from app.api import conversations as conversations_api
 from app.api import kbs as kbs_api
 from app.config import get_settings
-from app.db import close_pool, open_pool, run_migrations
+from app.db import close_pool, get_conn, open_pool, run_migrations
 from app.graphstore import close_driver
+from app.observability import flush_langfuse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logging.getLogger("chromadb.telemetry").setLevel(logging.CRITICAL)  # telemetry is switched off; hide its noise
+
+
+def _warn_empty_rag() -> None:
+    """Report ready document knowledge bases that have no chunks in the TurboQuant store."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT c.kb_name FROM kb_catalog c WHERE c.kb_type = 'rag' AND c.status = 'ready'
+                   AND NOT EXISTS (SELECT 1 FROM rag_chunks r WHERE r.kb_name = c.kb_name)"""
+            ).fetchall()
+    except Exception:  # noqa: BLE001 - startup should not fail for a diagnostic hint
+        return
+    if rows:
+        logging.getLogger(__name__).warning(
+            "%d document knowledge base(s) have no chunks in the TurboQuant store (%s). "
+            "Re-upload their documents to ingest them into TurboQuant.",
+            len(rows),
+            ", ".join(r["kb_name"] for r in rows[:10]),
+        )
 
 
 @asynccontextmanager
@@ -25,12 +45,14 @@ async def lifespan(app: FastAPI):
     run_migrations()
     open_pool()
     jobs.recover_interrupted()
+    _warn_empty_rag()
     yield
+    flush_langfuse()
     close_driver()
     close_pool()
 
 
-app = FastAPI(title="Graphbase API", lifespan=lifespan)
+app = FastAPI(title="TCS Knowledge Fabric API", lifespan=lifespan)
 
 CSRF_HEADER = "X-Requested-With"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -64,6 +86,7 @@ async def csrf_protection(request: Request, call_next):
 
 app.include_router(auth_api.router)
 app.include_router(connectors_api.router)
+app.include_router(conversations_api.router)
 app.include_router(kbs_api.router)
 
 
@@ -80,10 +103,8 @@ def _check_neo4j(s) -> str:
         return f"{info['v']} {info['edition']} (mode={s.neo4j_mode})"
 
 
-def _check_chroma(s) -> str:
-    client = rag.chroma_client()
-    client.heartbeat()
-    return f"ok ({client.get_version()})"
+def _check_vector_store(s) -> str:
+    return rag._store("checking the index folder", vectorstore.status)
 
 
 def _check_ollama(s) -> str:
@@ -100,7 +121,7 @@ def _check_ollama(s) -> str:
 @app.get("/api/health")
 def health():
     s = get_settings()
-    checks = {"postgres": _check_postgres, "neo4j": _check_neo4j, "chroma": _check_chroma}
+    checks = {"postgres": _check_postgres, "neo4j": _check_neo4j, "vector_store": _check_vector_store}
     if s.llm_provider == "ollama":
         checks["ollama"] = _check_ollama
     result = {}

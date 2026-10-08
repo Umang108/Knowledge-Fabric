@@ -1,8 +1,8 @@
-"""Graphbase as an MCP server (streamable HTTP), for agents.
+"""TCS Knowledge Fabric as an MCP server (streamable HTTP), for agents.
 
     python -m app.mcp_server            # serves http://MCP_HOST:MCP_PORT/mcp
 
-Every request must carry a Keycloak access token (see app/mcp_auth.py). The token's user is the Graphbase
+Every request must carry a Keycloak access token (see app/mcp_auth.py). The token's user is the TCS Knowledge Fabric
 user, and each tool goes through kb.require_access, so an agent sees exactly the knowledge bases its user
 owns or was granted in the web app, and nothing else. Graph queries are read-only and scoped to the KB
 (GraphStore.run_readonly), the same safety path as the chat screen.
@@ -29,16 +29,17 @@ from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from app import chat, extraction, kb, rag
+from app import chat, extraction, guardrails, kb, rag
 from app.auth import CurrentUser, keycloak_issuer
 from app.config import Settings, get_settings
 from app.db import open_pool, run_migrations
 from app.graphstore import GraphStore, UnsafeQueryError
 from app.mcp_auth import KeycloakTokenVerifier, required_scopes, user_for_claims
+from app.observability import flush_langfuse, trace_context
 
 log = logging.getLogger("graphbase.mcp")
 
-INSTRUCTIONS = """Graphbase knowledge bases: knowledge graphs (Neo4j) built from spreadsheets and RAG stores
+INSTRUCTIONS = """TCS Knowledge Fabric knowledge bases: knowledge graphs (Neo4j) built from spreadsheets and RAG stores
 built from documents. You only see the knowledge bases the signed-in user owns or was given access to.
 Start with list_knowledge_bases. For a graph, describe_knowledge_base shows its node types and relationships;
 use ask_knowledge_base for questions in plain language, or query_graph for exact read-only Cypher. For a RAG
@@ -82,7 +83,10 @@ async def _call(tool: str, fn, *args) -> Any:
     def body():
         user = _user(claims)
         log.info("MCP %s by %s %s", tool, user.user_id, args[:1] if args else "")
-        return fn(user, *args)
+        kb_name = args[0] if args and isinstance(args[0], str) and tool != "whoami" else None
+        # one Langfuse trace per tool call, as the Keycloak user; the Keycloak session groups an agent's calls
+        with trace_context(user.user_id, claims.get("sid") or claims.get("jti"), f"MCP {tool}", kb_name):
+            return fn(user, *args)
 
     return await anyio.to_thread.run_sync(body)
 
@@ -168,13 +172,19 @@ def ask_knowledge_base(user: CurrentUser, kb_name: str, question: str) -> dict:
     cat = _kb(user, kb_name, ready=True)
     if cat["kb_type"] == "graph":
         r = chat.graph_answer(GraphStore(kb_name), cat["approved_schema"], cat["approved_at"], question, [])
-        return {"answer": r["answer"], "cypher": r["cypher"], "rows": r["rows"], "row_count": r["row_count"]}
+        return {
+            "answer": r["answer"],
+            "cypher": r["cypher"],
+            "rows": r["rows"],
+            "row_count": r["row_count"],
+            "guardrails": r.get("guardrails", []),
+        }
     r = chat.rag_answer(kb_name, question, [])
-    return {"answer": r["answer"], "sources": r["sources"]}
+    return {"answer": r["answer"], "sources": r["sources"], "guardrails": r.get("guardrails", [])}
 
 
 def query_graph(user: CurrentUser, kb_name: str, cypher: str, limit: int) -> dict:
-    _kb(user, kb_name, kind="graph", ready=True)
+    cat = _kb(user, kb_name, kind="graph", ready=True)
     cap = max(1, min(int(limit), get_settings().mcp_max_rows))
     try:
         _, rows = GraphStore(kb_name).run_readonly(cypher.strip().rstrip(";"), limit=cap)
@@ -182,14 +192,19 @@ def query_graph(user: CurrentUser, kb_name: str, cypher: str, limit: int) -> dic
         raise ToolError(f"Refused: {exc}") from None
     except Exception as exc:  # syntax errors, unknown functions, timeouts
         raise ToolError(f"Cypher failed: {type(exc).__name__}: {str(exc)[:300]}") from None
-    rows = chat._json_safe(rows)
-    return {"rows": rows, "row_count": len(rows), "truncated": len(rows) >= cap}
+    report = guardrails.Report()
+    rows = guardrails.mask_rows(chat._json_safe(rows), cypher, cat["approved_schema"], report)
+    return {"rows": rows, "row_count": len(rows), "truncated": len(rows) >= cap, "guardrails": report.as_list()}
 
 
 def search_documents(user: CurrentUser, kb_name: str, query: str, k: int) -> dict:
     _kb(user, kb_name, kind="rag", ready=True)
+    report = guardrails.check_question(query)
+    if report.blocked:
+        raise ToolError(guardrails.blocked_answer(report))
     passages = rag.retrieve(kb_name, query, k=max(1, min(int(k), 20)))
-    return {"passages": passages}
+    passages = [{**p, "text": guardrails.mask_text(p["text"], report)} for p in passages]
+    return {"passages": passages, "guardrails": report.as_list()}
 
 
 # ------------------------------------------------------------------ server
@@ -199,7 +214,7 @@ def build_server(s: Settings | None = None) -> FastMCP:
         raise SystemExit("The MCP server needs KEYCLOAK_URL and KEYCLOAK_REALM: agents sign in through Keycloak.")
     public = s.mcp_public_url.rstrip("/")
     mcp = FastMCP(
-        "graphbase",
+        "TCS Knowledge Fabric",
         instructions=INSTRUCTIONS,
         token_verifier=KeycloakTokenVerifier(),
         auth=AuthSettings(
@@ -217,7 +232,7 @@ def build_server(s: Settings | None = None) -> FastMCP:
     async def health(_: Request) -> JSONResponse:
         return JSONResponse({"ok": True})
 
-    @mcp.tool(name="whoami", description="The Graphbase user this session acts as.")
+    @mcp.tool(name="whoami", description="The TCS Knowledge Fabric user this session acts as.")
     async def _whoami() -> dict:
         return await _call("whoami", whoami)
 
@@ -269,7 +284,10 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     run_migrations()
     open_pool()
-    build_server().run(transport="streamable-http")
+    try:
+        build_server().run(transport="streamable-http")
+    finally:
+        flush_langfuse()
 
 
 if __name__ == "__main__":

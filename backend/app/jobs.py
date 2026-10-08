@@ -11,9 +11,12 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 
 from app.db import get_conn
+from app.observability import trace_context
 
 log = logging.getLogger(__name__)
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="job")
+# job type -> traced operation (app.observability.WORKFLOW_NAMES), when the caller doesn't name one
+_TRACE_OPERATION = {"graph_extract": "kg_extraction", "graph_build": "kg_build", "rag_ingest": "rag_ingest"}
 _local = threading.local()
 
 
@@ -89,7 +92,17 @@ def cancel(job_id: int, actor: str) -> bool:
         )
 
 
-def submit(job_id: int, fn, *args, on_error=None, **kwargs) -> None:
+def submit(
+    job_id: int,
+    fn,
+    *args,
+    on_error=None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+    operation: str | None = None,
+    kb_name: str | None = None,
+    **kwargs,
+) -> None:
     """Run fn(job_id, *args) in the background, recording start/finish/failure."""
 
     def run():
@@ -102,7 +115,19 @@ def submit(job_id: int, fn, *args, on_error=None, **kwargs) -> None:
         if not started:
             return
         try:
-            fn(job_id, *args, **kwargs)
+            with get_conn() as conn:
+                job = conn.execute(
+                    "SELECT started_by, kb_name, job_type, source_file FROM jobs WHERE id = %s", (job_id,)
+                ).fetchone() or {}
+            with trace_context(
+                user_id or job.get("started_by"),
+                session_id or f"job:{job_id}",
+                operation or _TRACE_OPERATION.get(job.get("job_type"), job.get("job_type")),
+                kb_name or job.get("kb_name"),
+                job_id=job_id,
+                source=job.get("source_file"),
+            ):
+                fn(job_id, *args, **kwargs)
             with get_conn() as conn:
                 conn.execute(
                     """UPDATE jobs SET status = 'succeeded', progress = 100, finished_at = now(),

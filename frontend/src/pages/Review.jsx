@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
-import { ErrorBox } from "../components/common.jsx";
+import { CypherPanel, ErrorBox } from "../components/common.jsx";
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
+// short labels for badges; the category picker uses the NIST catalogue labels from the server
 const PII_LABEL = { person_name: "name", email: "email", phone: "phone", address: "address", date_of_birth: "DOB",
-                    government_id: "gov ID", bank_account: "bank", financial: "financial", free_text: "free text",
-                    other: "other" };
+                    government_id: "gov ID", bank_account: "account", personal_id: "personal ID", biometric: "biometric",
+                    online_identifier: "device ID", demographic: "demographic", health: "health",
+                    financial: "financial", location: "location", free_text: "free text", other: "other" };
+let CATEGORY_LABEL = { ...PII_LABEL };
+const LEVEL = { low: "Low", moderate: "Moderate", high: "High" };
 const PII_CATEGORIES = Object.keys(PII_LABEL);
 const SOURCE_LABEL = { llm: "LLM", rules: "rules", user: "you" };
 const piiKey = (sheet, column) => `${sheet}|${column}`;
@@ -44,7 +48,7 @@ function PiiControl({ entry, label, categories, disabled, onChange }) {
       {on && (
         <select className="inp sm" aria-label={`PII category ${label}`} value={entry.category} disabled={disabled}
                 onChange={(e) => onChange({ category: e.target.value })}>
-          {categories.map((c) => <option key={c} value={c}>{PII_LABEL[c] || c}</option>)}
+          {categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] || c}</option>)}
         </select>
       )}
     </span>
@@ -53,15 +57,19 @@ function PiiControl({ entry, label, categories, disabled, onChange }) {
 
 function PropList({ props, pii, sheet }) {
   if (!props.length) return <span className="muted">none</span>;
-  return props.map((p, i) => {
-    const hit = pii.get(piiKey(sheet, p.column));
-    return (
-      <span key={p.name + i}>
-        {i > 0 && ", "}{p.name}
-        {piiActive(hit) && <span className="badge pii" title={`PII: ${hit.category} (found by ${SOURCE_LABEL[hit.detected_by] || hit.detected_by})`}>PII {PII_LABEL[hit.category] || ""}</span>}
-      </span>
-    );
-  });
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {props.map((p, i) => {
+        const hit = pii.get(piiKey(sheet, p.column));
+        return (
+          <span key={p.name + i} className="chip" title={`Stored as "${p.name}" from column "${p.column}" (${p.type})`}>
+            {p.name}
+            {piiActive(hit) && <span className="badge pii" title={`PII: ${hit.category} (found by ${SOURCE_LABEL[hit.detected_by] || hit.detected_by})`}>PII {PII_LABEL[hit.category] || ""}</span>}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 function PropEditor({ props, onChange, sheet, pii, onPii, categories }) {
@@ -99,20 +107,34 @@ function storedColumns(nodes, relationships) {
   return [...out.values()];
 }
 
-function PiiPanel({ work, effective, categories, disabled, onPii }) {
+function Impact({ entry }) {
+  if (!entry?.nist_impact) return <span className="muted">—</span>;
+  const tip = [...(entry.nist_factors || []), "", "Safeguards (NIST Privacy Framework):", ...(entry.nist_controls || [])].join("\n");
+  return (
+    <span title={tip}>
+      <span className={`impact ${entry.nist_impact}`}>{LEVEL[entry.nist_impact]}</span>
+      <div className="muted small">{entry.nist_identifier === "direct" ? "Direct identifier" : "Linkable"}</div>
+    </span>
+  );
+}
+
+function PiiPanel({ work, effective, assessed, categories, disabled, onPii }) {
   const [showAll, setShowAll] = useState(false);
   const byKey = new Map((work.pii || []).map((p) => [piiKey(p.sheet, p.column), p]));
   const stored = storedColumns(effective.schema.nodes, effective.schema.relationships);
   const rows = stored.filter((c) => showAll || byKey.has(piiKey(c.sheet, c.column)));
   const active = (work.pii || []).filter(piiActive).length;
   return (
-    <div className="card" style={{ overflowX: "auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 14px", gap: 12 }}>
+    <div className="card panel">
+      <div className="panel-head">
         <div>
-          <div className="section">Personal data (PII)</div>
-          <div className="muted small">
-            {active} column{active === 1 ? "" : "s"} marked as PII. Tick or untick to decide yourself; your choice is
-            saved with the graph and recorded in kb_pii_fields.
+          <div className="section">Personal data (PII) · NIST SP 800-122</div>
+          <div className="help">
+            {active} column{active === 1 ? "" : "s"} marked as PII. Each is classified as a direct identifier or
+            linkable information and given a confidentiality impact level (Low / Moderate / High) from its
+            sensitivity, what it is stored with and how many records hold it; hover the level for the factors and the
+            NIST Privacy Framework safeguards. Tick or untick to decide yourself; your choice is saved with the graph
+            and recorded in kb_pii_fields.
           </div>
         </div>
         <label className="small" style={{ whiteSpace: "nowrap" }}>
@@ -120,11 +142,13 @@ function PiiPanel({ work, effective, categories, disabled, onPii }) {
                  aria-label="Show all stored columns" /> Show all stored columns
         </label>
       </div>
+      <div className="panel-body">
       <table>
-        <thead><tr><th>Column</th><th>Stored as</th><th>PII</th><th>Found by</th><th>Status</th></tr></thead>
+        <thead><tr><th>Column (sheet)</th><th>Stored in the graph as</th><th style={{ width: 260 }}>PII category</th>
+          <th style={{ width: 150 }}>NIST impact</th><th>Found by</th><th style={{ width: 110 }}>Status</th></tr></thead>
         <tbody>
           {!rows.length && (
-            <tr><td colSpan={5} className="muted">No PII detected. Tick &ldquo;Show all stored columns&rdquo; to mark columns yourself.</td></tr>
+            <tr><td colSpan={6} className="muted">No PII detected. Tick &ldquo;Show all stored columns&rdquo; to mark columns yourself.</td></tr>
           )}
           {rows.map((c) => {
             const entry = byKey.get(piiKey(c.sheet, c.column));
@@ -135,6 +159,7 @@ function PiiPanel({ work, effective, categories, disabled, onPii }) {
                 <td className="mono small">{c.where.join(", ")}</td>
                 <td><PiiControl entry={entry} label={c.column} categories={categories} disabled={disabled}
                                 onChange={(change) => onPii(c.sheet, c.column, change)} /></td>
+                <td>{piiActive(entry) ? <Impact entry={assessed.get(piiKey(c.sheet, c.column)) || entry} /> : <span className="muted">—</span>}</td>
                 <td className="small">
                   {entry ? `${SOURCE_LABEL[entry.detected_by] || entry.detected_by}` : "—"}
                   {entry && entry.detected_by !== "user" && entry.confidence != null &&
@@ -150,6 +175,7 @@ function PiiPanel({ work, effective, categories, disabled, onPii }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -159,22 +185,22 @@ function Actions({ removed, editing, onEdit, onDelete, onUndo, onSave, onCancel 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
         <span className="badge r">Removed</span>
-        <button className="btn sec sm" onClick={onUndo}>Undo</button>
+        <button className="act" onClick={onUndo}>Undo</button>
       </div>
     );
   }
   if (editing) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <button className="btn sm" onClick={onSave}>Save</button>
-        <button className="btn sec sm" onClick={onCancel}>Cancel</button>
+      <div className="acts">
+        <button className="act" onClick={onSave}>Save</button>
+        <button className="act" onClick={onCancel}>Cancel</button>
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <button className="btn sec sm" onClick={onEdit}>Edit</button>
-      <button className="btn danger sm" onClick={onDelete}>Delete</button>
+    <div className="acts">
+      <button className="act" onClick={onEdit}>Edit</button>
+      <button className="act danger" onClick={onDelete}>Delete</button>
     </div>
   );
 }
@@ -188,8 +214,7 @@ export default function Review() {
   const [editing, setEditing] = useState(null);  // {kind, id, draft, pii}
   const [categories, setCategories] = useState(PII_CATEGORIES);
   const [adding, setAdding] = useState(null);    // "node" | "rel"
-  const [preview, setPreview] = useState({ cypher: [], summary: null, errors: [] });
-  const [showAll, setShowAll] = useState(false);
+  const [preview, setPreview] = useState({ cypher: [], summary: null, errors: [], pii: [] });
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -199,11 +224,14 @@ export default function Review() {
       setSaved(schema);
       setWork(clone(schema));
       if (r.pii_categories?.length) setCategories(r.pii_categories);
-      setPreview({ cypher: r.cypher, summary: r.summary, errors: [] });
+      if (r.pii_catalogue?.length) CATEGORY_LABEL = Object.fromEntries(r.pii_catalogue.map((c) => [c.category, c.label]));
+      setPreview({ cypher: r.cypher, summary: r.summary, errors: [], pii: r.pii || [] });
     }).catch(setError);
   }, [kb]);
 
   const pii = useMemo(() => new Map((work?.pii || []).map((p) => [`${p.sheet}|${p.column}`, p])), [work]);
+  // NIST fields come from the server (recomputed on every edit by the live preview)
+  const assessed = useMemo(() => new Map((preview.pii || []).map((p) => [piiKey(p.sheet, p.column), p])), [preview]);
 
   // nodes removed explicitly take their relationships with them
   const effective = useMemo(() => {
@@ -228,7 +256,7 @@ export default function Review() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       api(`/kbs/${kb}/review/preview`, { method: "POST", json: { schema: effective.schema } })
-        .then((r) => setPreview({ cypher: r.cypher, summary: r.summary, errors: [] }))
+        .then((r) => setPreview({ cypher: r.cypher, summary: r.summary, errors: [], pii: r.pii || [] }))
         .catch((e) => setPreview((p) => ({ ...p, errors: e.details?.errors || [e.message] })));
     }, 350);
     return () => clearTimeout(timer.current);
@@ -322,7 +350,7 @@ export default function Review() {
   const pending = counts.edits + counts.removals + counts.pii;
   const activePii = (work.pii || []).filter(piiActive).length;
   const summary = preview.summary || {};
-  const cypherShown = showAll ? preview.cypher : preview.cypher.slice(0, 4);
+  const fmt = (n) => (n ?? 0).toLocaleString();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
@@ -333,24 +361,41 @@ export default function Review() {
             <h1 style={{ marginTop: 4 }}>Review extracted graph</h1>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <span className="badge b">{summary.node_types ?? 0} node types</span>
-            <span className="badge b">{(summary.entities ?? 0).toLocaleString()} entities</span>
-            <span className="badge b">{summary.relationship_types ?? 0} relationship types</span>
+            <span className="badge b" title="Kinds of things in the graph">{summary.node_types ?? 0} node types</span>
+            <span className="badge b" title="Nodes the file will create (distinct keys)">{fmt(summary.entities)} entities</span>
+            <span className="badge b" title="Kinds of links between node types">{summary.relationship_types ?? 0} relationship types</span>
+            <span className="badge b" title="Links the file will create">{fmt(summary.relationships)} relationships</span>
             <span className="badge b">{activePii} PII columns</span>
             <span className="badge w">{pending} pending changes</span>
           </div>
         </div>
         <ErrorBox error={error} />
 
-        <div className="split" style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-          {/* ---------------- nodes */}
-          <div className="card" style={{ flex: 1, minWidth: 0, overflowX: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 14px" }}>
-              <div className="section">Nodes and entities</div>
-              <button className="btn sec sm" onClick={() => setAdding("node")}>Add node type</button>
+        {/* ---------------- node types */}
+        <div className="card panel">
+          <div className="panel-head">
+            <div>
+              <div className="section">Node types and entities</div>
+              <div className="help">
+                A <strong>node type</strong> is a kind of thing in the graph (for example Customer). Every distinct value
+                of its key in the source sheet becomes one <strong>entity</strong> (a node) of that type, carrying the
+                listed properties. Hover a property to see the column it comes from.
+              </div>
             </div>
+            <button className="act" onClick={() => setAdding("node")}>+ Add node type</button>
+          </div>
+          <div className="panel-body">
             <table>
-              <thead><tr><th>Label</th><th>Key property</th><th>Properties</th><th>Count</th><th /></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: "16%" }}>Node type (label)</th>
+                  <th style={{ width: "13%" }}>Source sheet</th>
+                  <th style={{ width: "17%" }}>Unique key (property ← column)</th>
+                  <th>Properties stored on each entity</th>
+                  <th style={{ width: 90, textAlign: "right" }}>Entities</th>
+                  <th style={{ width: 120 }} />
+                </tr>
+              </thead>
               <tbody>
                 {adding === "node" && (
                   <AddNode sheets={sheets} columnsOf={columnsOf} onCancel={() => setAdding(null)}
@@ -366,8 +411,9 @@ export default function Review() {
                       <td className="strike" style={{ fontWeight: 600 }}>
                         {isEditing ? <input className="inp sm" value={d.label} aria-label="Label"
                                             onChange={(e) => set({ label: e.target.value })} /> : n.label}
-                        {n.role === "embedded" && !isEditing && <div className="muted small">from column</div>}
+                        {n.role === "embedded" && !isEditing && <div className="muted small">derived from a column</div>}
                       </td>
+                      <td className="strike small">{n.sheet}</td>
                       <td className="strike mono small">
                         {isEditing ? (
                           <span style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
@@ -377,14 +423,15 @@ export default function Review() {
                                         label={`key ${d.key.column}`} categories={categories}
                                         onChange={(change) => setDraftPii(d.sheet, d.key.column, change)} />
                           </span>
-                        ) : <>{n.key.name}{piiActive(pii.get(piiKey(n.sheet, n.key.column))) && <span className="badge pii">PII</span>}</>}
+                        ) : <>{n.key.name}{piiActive(pii.get(piiKey(n.sheet, n.key.column))) && <span className="badge pii">PII</span>}
+                              <span className="colsrc">← {n.key.column}</span></>}
                       </td>
                       <td className="strike">
                         {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })}
                                                  sheet={d.sheet} pii={editing.pii} onPii={setDraftPii} categories={categories} />
                                    : <PropList props={n.properties} pii={pii} sheet={n.sheet} />}
                       </td>
-                      <td>{(n.count ?? 0).toLocaleString()}</td>
+                      <td style={{ textAlign: "right" }}>{(n.count ?? 0).toLocaleString()}</td>
                       <td>
                         <Actions removed={isRemoved} editing={isEditing}
                                  onEdit={() => startEdit("node", n)}
@@ -397,15 +444,34 @@ export default function Review() {
               </tbody>
             </table>
           </div>
+        </div>
 
-          {/* ---------------- relationships */}
-          <div className="card" style={{ flex: 1, minWidth: 0, overflowX: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 14px" }}>
-              <div className="section">Relationships</div>
-              <button className="btn sec sm" onClick={() => setAdding("rel")}>Add relationship</button>
+        {/* ---------------- relationship types */}
+        <div className="card panel">
+          <div className="panel-head">
+            <div>
+              <div className="section">Relationship types</div>
+              <div className="help">
+                A <strong>relationship type</strong> links two node types in the direction shown (From → To). Every row
+                of the source sheet that connects them becomes one <strong>relationship</strong>; optional ones are skipped
+                when the row has no value.
+              </div>
             </div>
+            <button className="act" onClick={() => setAdding("rel")}>+ Add relationship</button>
+          </div>
+          <div className="panel-body">
             <table>
-              <thead><tr><th>From</th><th>Relationship</th><th>To</th><th>Properties</th><th /></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: "14%" }}>From (node type)</th>
+                  <th style={{ width: "17%" }}>Relationship type</th>
+                  <th style={{ width: "14%" }}>To (node type)</th>
+                  <th style={{ width: "20%" }}>Defined by (sheet: column → column)</th>
+                  <th>Properties</th>
+                  <th style={{ width: 125, textAlign: "right" }}>Relationships</th>
+                  <th style={{ width: 120 }} />
+                </tr>
+              </thead>
               <tbody>
                 {adding === "rel" && (
                   <AddRel sheets={sheets} columnsOf={columnsOf} labels={labels} onCancel={() => setAdding(null)}
@@ -418,18 +484,22 @@ export default function Review() {
                   const set = (patch) => setEditing({ ...editing, draft: { ...editing.draft, ...patch } });
                   return (
                     <tr key={r.id} className={isRemoved ? "removed" : isEditing ? "editing" : ""}>
-                      <td className="strike">{r.from.label}</td>
+                      <td className="strike" style={{ fontWeight: 600 }}>{r.from.label}</td>
                       <td className="strike mono small">
                         {isEditing ? <input className="inp sm" value={d.type} aria-label="Relationship type"
                                             onChange={(e) => set({ type: e.target.value })} /> : r.type}
-                        {!isEditing && !r.required && <div className="muted small">optional</div>}
+                        {!isEditing && <div className="muted small">{r.required ? "required" : "optional"}</div>}
                       </td>
-                      <td className="strike">{r.to.label}</td>
+                      <td className="strike" style={{ fontWeight: 600 }}>{r.to.label}</td>
+                      <td className="strike small">
+                        {r.sheet}: <span className="mono">{r.from.column} → {r.to.column}</span>
+                      </td>
                       <td className="strike">
                         {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })}
                                                  sheet={d.sheet} pii={editing.pii} onPii={setDraftPii} categories={categories} />
                                    : <PropList props={r.properties} pii={pii} sheet={r.sheet} />}
                       </td>
+                      <td style={{ textAlign: "right" }}>{r.count != null ? r.count.toLocaleString() : "—"}</td>
                       <td>
                         <Actions removed={isRemoved} editing={isEditing}
                                  onEdit={() => startEdit("rel", r)}
@@ -449,7 +519,8 @@ export default function Review() {
           </div>
         </div>
 
-        <PiiPanel work={work} effective={effective} categories={categories} disabled={!!editing} onPii={setWorkPii} />
+        <PiiPanel work={work} effective={effective} assessed={assessed} categories={categories} disabled={!!editing}
+                  onPii={setWorkPii} />
 
         {preview.errors.length > 0 && (
           <div className="error" role="alert">
@@ -458,15 +529,8 @@ export default function Review() {
           </div>
         )}
 
-        <div className="code" aria-live="polite">
-          <div className="head">
-            <span>GENERATED CYPHER (updates as you edit)</span>
-            <button className="btn link" style={{ color: "#9fb0ac", fontSize: 12 }} onClick={() => setShowAll(!showAll)}>
-              {showAll ? "Show fewer" : `${cypherShown.length} of ${preview.cypher.length} statements shown`}
-            </button>
-          </div>
-          <pre>{cypherShown.join("\n")}</pre>
-        </div>
+        <CypherPanel title="Generated Cypher (updates as you edit)" code={preview.cypher}
+                     meta={`${preview.cypher.length} statements`} />
       </div>
 
       <div style={{ position: "sticky", bottom: 0, background: "#fff", borderTop: "1px solid var(--line)", padding: "16px 32px",
@@ -495,7 +559,7 @@ function AddNode({ sheets, columnsOf, onAdd, onCancel }) {
   const snake = (c) => c.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   return (
     <tr className="editing">
-      <td colSpan={5}>
+      <td colSpan={6}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
           <label>Sheet<select className="inp sm" aria-label="Sheet" value={sheet} onChange={(e) => { setSheet(e.target.value); setKey(columnsOf(e.target.value)[0]); setProps([]); }}>
             {sheets.map((s) => <option key={s}>{s}</option>)}</select></label>
@@ -537,7 +601,7 @@ function AddRel({ sheets, columnsOf, labels, onAdd, onCancel }) {
   );
   return (
     <tr className="editing">
-      <td colSpan={5}>
+      <td colSpan={7}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
           <label>Sheet{pick("Sheet", sheet, (s) => { setSheet(s); setFromCol(columnsOf(s)[0]); setToCol(columnsOf(s)[0]); }, sheets)}</label>
           <label>From{pick("From", from, setFrom, labels)}</label>

@@ -9,6 +9,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 
 from app.config import get_settings
+from app.observability import observe_llm, record_output, update_llm_usage
 
 
 def get_llm(json_mode: bool = False, temperature: float = 0.0) -> BaseChatModel:
@@ -54,23 +55,56 @@ class _PrefixedEmbeddings(Embeddings):
         return self.inner.embed_query(self.query_prefix + text)
 
 
+class _ObservedEmbeddings(Embeddings):
+    """Records each embedding request in Langfuse (counts only, never the text)."""
+
+    def __init__(self, inner: Embeddings):
+        self.inner = inner
+
+    @staticmethod
+    def _model() -> str:
+        s = get_settings()
+        return s.ollama_embed_model if s.llm_provider == "ollama" else s.azure_openai_embed_deployment
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        with observe_llm("embedding_documents", {"count": len(texts)}, model=self._model(), as_type="embedding") as obs:
+            result = self.inner.embed_documents(texts)
+            record_output(obs, {"count": len(result)})
+            return result
+
+    def embed_query(self, text: str) -> list[float]:
+        with observe_llm("embedding_query", {"length": len(text)}, model=self._model(), as_type="embedding") as obs:
+            result = self.inner.embed_query(text)
+            record_output(obs, {"dimensions": len(result)})
+            return result
+
+
+def observed_embeddings(inner: Embeddings) -> Embeddings:
+    return _ObservedEmbeddings(inner)
+
+
 def get_embeddings() -> Embeddings:
     s = get_settings()
     if s.llm_provider == "ollama":
         emb = OllamaEmbeddings(base_url=s.ollama_base_url, model=s.ollama_embed_model)
         if s.ollama_embed_model.startswith("nomic-embed-text"):
-            return _PrefixedEmbeddings(emb, "search_document: ", "search_query: ")
-        return emb
+            emb = _PrefixedEmbeddings(emb, "search_document: ", "search_query: ")
+        return _ObservedEmbeddings(emb)
     if s.llm_provider == "azure":
         if not (s.azure_openai_endpoint and s.azure_openai_api_key and s.azure_openai_embed_deployment):
             raise ValueError(
                 "LLM_PROVIDER=azure needs AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY and AZURE_OPENAI_EMBED_DEPLOYMENT"
             )
-        return AzureOpenAIEmbeddings(
-            azure_endpoint=s.azure_openai_endpoint,
-            api_key=s.azure_openai_api_key,
-            api_version=s.azure_openai_api_version,
-            azure_deployment=s.azure_openai_embed_deployment,
+        return _ObservedEmbeddings(
+            AzureOpenAIEmbeddings(
+                azure_endpoint=s.azure_openai_endpoint,
+                api_key=s.azure_openai_api_key,
+                api_version=s.azure_openai_api_version,
+                azure_deployment=s.azure_openai_embed_deployment,
+                # chunks are ~1,000 characters, far below the model limit: skip token counting, which would
+                # download tiktoken files from the internet on first use (fails on servers without internet access)
+                check_embedding_ctx_length=False,
+            )
         )
     raise ValueError(f"Unsupported LLM_PROVIDER: {s.llm_provider}")
 
@@ -112,7 +146,11 @@ def ask_json(system: str, user: str, retries: int = 1) -> dict:
     messages = [("system", system), ("human", user)]
     last_error = None
     for _ in range(retries + 1):
-        reply = llm.invoke(messages).content
+        with observe_llm("llm_json", list(messages)) as generation:
+            response = llm.invoke(messages)
+            reply = response.content
+            record_output(generation, reply)
+            update_llm_usage(generation, response)
         try:
             data = parse_json(reply)
             if not isinstance(data, dict):
@@ -125,4 +163,10 @@ def ask_json(system: str, user: str, retries: int = 1) -> dict:
 
 
 def ask_text(system: str, user: str) -> str:
-    return strip_thinking(get_llm().invoke([("system", system), ("human", user)]).content)
+    messages = [("system", system), ("human", user)]
+    with observe_llm("llm_text", messages) as generation:
+        response = get_llm().invoke(messages)
+        reply = response.content
+        record_output(generation, reply)
+        update_llm_usage(generation, response)
+    return strip_thinking(reply)

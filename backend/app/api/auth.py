@@ -81,3 +81,57 @@ def logout(request: Request, response: Response):
 @router.get("/me")
 def me(user: CurrentUser = Depends(current_user)):
     return _user_view(user)
+
+
+# ------------------------------------------------------------------ session management
+@router.get("/session")
+def session_status(request: Request):
+    """Expiry times of the current session; does not count as activity (the UI polls it)."""
+    s = get_settings()
+    timing = auth.session_timing(request.cookies.get(s.session_cookie_name))
+    if not timing:
+        raise HTTPException(401, "Not signed in or the session has expired")
+    return {**timing, "idle_minutes": s.session_idle_minutes, "max_hours": s.session_max_hours}
+
+
+@router.get("/sessions")
+def list_sessions(user: CurrentUser = Depends(current_user)):
+    """The user's signed-in sessions (browsers / devices)."""
+    return [
+        {
+            "id": auth.public_session_id(row["id"]),
+            "current": row["id"] == user.session_id,
+            "device": auth.describe_agent(row["user_agent"]),
+            "ip_address": row["ip_address"],
+            "auth_source": row["auth_source"],
+            "signed_in_at": row["created_at"],
+            "last_seen_at": row["last_seen_at"],
+            "expires_at": min(row["expires_at"], row["idle_expires_at"]),
+        }
+        for row in auth.active_sessions(user.user_id)
+    ]
+
+
+@router.post("/sessions/{public_id}/revoke")
+def revoke_one(public_id: str, response: Response, user: CurrentUser = Depends(current_user)):
+    for row in auth.active_sessions(user.user_id):
+        if auth.public_session_id(row["id"]) == public_id:
+            ended = auth.revoke_session(row["id"], "signed out from the sessions page", user.user_id)
+            if ended and ended["auth_source"] == "keycloak":
+                auth.keycloak_logout(ended["kc_refresh_token"])
+            if row["id"] == user.session_id:
+                auth.clear_cookie(response)
+            return {"revoked": public_id, "current": row["id"] == user.session_id}
+    raise HTTPException(404, "Session not found")
+
+
+@router.post("/sessions/revoke-others")
+def revoke_others(user: CurrentUser = Depends(current_user)):
+    n = 0
+    for row in auth.active_sessions(user.user_id):
+        if row["id"] != user.session_id:
+            ended = auth.revoke_session(row["id"], "signed out from another session", user.user_id)
+            if ended and ended["auth_source"] == "keycloak":
+                auth.keycloak_logout(ended["kc_refresh_token"])
+            n += 1
+    return {"revoked": n}

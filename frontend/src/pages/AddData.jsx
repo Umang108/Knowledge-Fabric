@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, formatDate, formatSize } from "../api.js";
-import { DropZone, ErrorBox, Modal, TypeBadge, usePoll } from "../components/common.jsx";
+import { DropZone, ErrorBox, Modal, ProgressBar, TypeBadge, usePoll } from "../components/common.jsx";
 import { ConnectionsModal, DatasetPicker, datasetsPayload, initialSelection, presetsFor, useConnectors }
   from "../components/connectors.jsx";
 
@@ -67,10 +67,10 @@ export default function AddData() {
       files.forEach((f) => fd.append("files", f));
       fd.append("merge_existing", merge);
       fd.append("skip_invalid", skip);
-      await api(`/kbs/${kb}/add-data`, { method: "POST", form: fd });
+      const r = await api(`/kbs/${kb}/add-data`, { method: "POST", form: fd });
       setFiles([]);
       setCheck(null);
-      setTimeout(loadRuns, 300);
+      navigate(`/kbs/${kb}/jobs/${r.job_id}`);
     } catch (e) {
       setError(e);
     } finally {
@@ -132,7 +132,7 @@ export default function AddData() {
       <div className="split" style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div className="card" style={{ flex: 1.4, padding: 22, display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
           <div>
-            <label className="lbl" htmlFor="kb">Knowledge base</label>
+            <label className="lbl req" htmlFor="kb">Knowledge base</label>
             <select id="kb" className="inp" value={kb} onChange={(e) => { setParams({ kb: e.target.value }); setFiles([]); setCheck(null); setPull(null); }}>
               {(kbs || []).map((k) => (
                 <option key={k.kb_name} value={k.kb_name}>{k.kb_name} ({k.kb_type === "graph" ? "Graph" : "RAG"}, {k.role})</option>
@@ -247,9 +247,9 @@ export default function AddData() {
               <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
                 {r.summary || "Mapping rows to the existing schema and writing to the graph."}{" "}
                 {r.finished_at && formatDate(r.finished_at, true)}{" "}
-                {r.rows_rejected > 0 && <button className="btn link" style={{ fontSize: 13 }} onClick={() => openReport(r)}>View report</button>}
+                {r.rows_rejected > 0 && <button className="act" onClick={() => openReport(r)}>View report</button>}
               </div>
-              {r.status === "running" && <div className="bar" style={{ marginTop: 8 }}><div style={{ width: `${r.progress || 0}%` }} /></div>}
+              {r.status === "running" && <ProgressBar value={r.progress} label={`Run ${r.run_no} progress`} style={{ marginTop: 8 }} />}
             </div>
           ))}
         </div>

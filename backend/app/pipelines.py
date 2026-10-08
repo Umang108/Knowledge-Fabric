@@ -6,12 +6,13 @@ from pathlib import Path
 from app import extraction, jobs, kb, loader, rag
 from app.db import get_conn
 from app.graphstore import GraphStore
+from app.observability import observe_workflow
 from app.tabular import read_table_file
 
 EXTRACT_STEPS = extraction.STEPS
 BUILD_STEPS = ["Validate rows against the approved schema", "Create nodes and relationships", "Verify graph"]
 ADD_GRAPH_STEPS = ["Match file to the existing schema", "Validate rows", "Write to the graph"]
-RAG_STEPS = ["Read documents", "Chunk text", "Embed and store in ChromaDB", "LLM scans for PII"]
+RAG_STEPS = ["Read documents", "Chunk text", "Embed and store in TurboQuant index", "LLM scans for PII"]
 
 
 # ------------------------------------------------------------------ PII rows
@@ -32,13 +33,15 @@ def sync_graph_pii(kb_name: str, schema: dict, actor: str = "system") -> None:
         for t in targets:
             conn.execute(
                 """INSERT INTO kb_pii_fields (kb_name, node_label, property_name, pii_category, sensitivity,
-                                              confidence, reason, detected_by, status, modified_by)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                              confidence, reason, detected_by, status, nist_identifier,
+                                              nist_impact, nist_factors, modified_by)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (kb_name, node_label, property_name) WHERE source_document IS NULL
                    DO UPDATE SET pii_category = EXCLUDED.pii_category, sensitivity = EXCLUDED.sensitivity,
                                  confidence = EXCLUDED.confidence, reason = EXCLUDED.reason,
                                  detected_by = EXCLUDED.detected_by, status = EXCLUDED.status,
-                                 modified_by = EXCLUDED.modified_by""",
+                                 nist_identifier = EXCLUDED.nist_identifier, nist_impact = EXCLUDED.nist_impact,
+                                 nist_factors = EXCLUDED.nist_factors, modified_by = EXCLUDED.modified_by""",
                 (
                     kb_name,
                     t["node_label"],
@@ -49,6 +52,9 @@ def sync_graph_pii(kb_name: str, schema: dict, actor: str = "system") -> None:
                     f"column '{t['column']}' in sheet '{t['sheet']}': {t.get('reason', '')}"[:500],
                     t["detected_by"],
                     t.get("status", "detected"),
+                    t.get("nist_identifier"),
+                    t.get("nist_impact"),
+                    json.dumps(t.get("nist_factors") or []),
                     actor,
                 ),
             )
@@ -60,8 +66,9 @@ def save_doc_pii(kb_name: str, filename: str, items: list[dict]) -> None:
         for i in items:
             conn.execute(
                 """INSERT INTO kb_pii_fields (kb_name, source_document, pii_category, sensitivity, confidence,
-                                              occurrences, reason, detected_by, modified_by)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'system')""",
+                                              occurrences, reason, detected_by, nist_identifier, nist_impact,
+                                              nist_factors, modified_by)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'system')""",
                 (
                     kb_name,
                     filename,
@@ -71,6 +78,9 @@ def save_doc_pii(kb_name: str, filename: str, items: list[dict]) -> None:
                     i["occurrences"],
                     i["reason"],
                     i["detected_by"],
+                    i.get("nist_identifier"),
+                    i.get("nist_impact"),
+                    json.dumps(i.get("nist_factors") or []),
                 ),
             )
 
@@ -103,20 +113,21 @@ def finish_run(run_id: int, status: str, **fields) -> None:
 
 # ------------------------------------------------------------------ graph: extract -> review
 def graph_extract(job_id: int, kb_name: str, file_path: str, file_name: str) -> None:
-    jobs.step(job_id, 0, "running")
-    sheets = read_table_file(file_path, file_name)
-    jobs.step(job_id, 0, "done", f"{len(sheets)} sheets, {sum(len(s.rows) for s in sheets):,} rows")
-    schema = extraction.extract(
-        sheets,
-        file_name,
-        step=lambda i, st, d: jobs.step(job_id, i, st, d),
-        cancelled=lambda: jobs.is_cancelled(job_id),
-    )
-    if not schema:
-        raise jobs.JobCancelled()
-    schema["source_path"] = file_path
-    kb.set_status(kb_name, "awaiting_review", None, draft_schema=json.dumps(schema, default=str))
-    sync_graph_pii(kb_name, schema)
+    with observe_workflow("KG Extraction", {"file": file_name, "knowledge_base": kb_name}):
+        jobs.step(job_id, 0, "running")
+        sheets = read_table_file(file_path, file_name)
+        jobs.step(job_id, 0, "done", f"{len(sheets)} sheets, {sum(len(s.rows) for s in sheets):,} rows")
+        schema = extraction.extract(
+            sheets,
+            file_name,
+            step=lambda i, st, d: jobs.step(job_id, i, st, d),
+            cancelled=lambda: jobs.is_cancelled(job_id),
+        )
+        if not schema:
+            raise jobs.JobCancelled()
+        schema["source_path"] = file_path
+        kb.set_status(kb_name, "awaiting_review", None, draft_schema=json.dumps(schema, default=str))
+        sync_graph_pii(kb_name, schema)
 
 
 # ------------------------------------------------------------------ graph: build after Submit
@@ -269,61 +280,62 @@ def rag_ingest(
     job_id: int, kb_name: str, files: list[tuple[str, str]], user_id: str, run_type: str, pii_llm: bool = True
 ) -> None:
     """files: [(path, original name)]. Each file gets its own pipeline run (upload chip status)."""
-    runs = {name: start_run(kb_name, run_type, name, user_id, job_id) for _, name in files}
-    parsed, failures = {}, []
-    jobs.step(job_id, 0, "running")
-    for path, name in files:
-        try:
-            parsed[name] = rag.extract_text(Path(path), name)
-        except rag.DocumentError as exc:
-            failures.append(f"{name}: {exc}")
-            finish_run(runs[name], "failed", summary=str(exc))
-    jobs.step(job_id, 0, "done", f"{len(parsed)} of {len(files)} documents readable")
+    with observe_workflow("Embedding", {"files": [name for _, name in files], "knowledge_base": kb_name}):
+        runs = {name: start_run(kb_name, run_type, name, user_id, job_id) for _, name in files}
+        parsed, failures = {}, []
+        jobs.step(job_id, 0, "running")
+        for path, name in files:
+            try:
+                parsed[name] = rag.extract_text(Path(path), name)
+            except rag.DocumentError as exc:
+                failures.append(f"{name}: {exc}")
+                finish_run(runs[name], "failed", summary=str(exc))
+        jobs.step(job_id, 0, "done", f"{len(parsed)} of {len(files)} documents readable")
 
-    jobs.step(job_id, 1, "running")
-    chunks = {name: rag.chunk(pages) for name, pages in parsed.items()}
-    jobs.step(job_id, 1, "done", f"{sum(len(c) for c in chunks.values())} chunks")
+        jobs.step(job_id, 1, "running")
+        chunks = {name: rag.chunk(pages) for name, pages in parsed.items()}
+        jobs.step(job_id, 1, "done", f"{sum(len(c) for c in chunks.values())} chunks")
 
-    jobs.step(job_id, 2, "running")
-    done_files = 0
-    for name, cs in chunks.items():
-        try:
-            rag.store_chunks(
-                kb_name,
-                name,
-                cs,
-                runs[name],
-                progress=lambda f, name=name, done=done_files: jobs.step(
-                    job_id, 2, "running", f"{name}: {f:.0%}", progress=50 + 25 * (done + f) / max(len(chunks), 1)
-                ),
-            )
-            finish_run(
-                runs[name],
-                "completed",
-                chunks_added=len(cs),
-                rows_total=len(cs),
-                rows_loaded=len(cs),
-                rows_rejected=0,
-                summary=f"Indexed {len(cs)} chunks.",
-            )
-        except Exception as exc:
-            failures.append(f"{name}: {exc}")
-            finish_run(runs[name], "failed", summary=str(exc)[:500])
-            chunks[name] = []
-        done_files += 1
-        if jobs.is_cancelled(job_id):
-            raise jobs.JobCancelled()
-    jobs.step(job_id, 2, "done", f"{done_files} documents embedded")
+        jobs.step(job_id, 2, "running")
+        done_files = 0
+        for name, cs in chunks.items():
+            try:
+                rag.store_chunks(
+                    kb_name,
+                    name,
+                    cs,
+                    runs[name],
+                    progress=lambda f, name=name, done=done_files: jobs.step(
+                        job_id, 2, "running", f"{name}: {f:.0%}", progress=50 + 25 * (done + f) / max(len(chunks), 1)
+                    ),
+                )
+                finish_run(
+                    runs[name],
+                    "completed",
+                    chunks_added=len(cs),
+                    rows_total=len(cs),
+                    rows_loaded=len(cs),
+                    rows_rejected=0,
+                    summary=f"Indexed {len(cs)} chunks.",
+                )
+            except Exception as exc:
+                failures.append(f"{name}: {exc}")
+                finish_run(runs[name], "failed", summary=str(exc)[:500])
+                chunks[name] = []
+            done_files += 1
+            if jobs.is_cancelled(job_id):
+                raise jobs.JobCancelled()
+        jobs.step(job_id, 2, "done", f"{done_files} documents embedded")
 
-    jobs.step(job_id, 3, "running")
-    for name, cs in chunks.items():
-        if cs:
-            save_doc_pii(kb_name, name, rag.scan_pii(name, cs, use_llm=pii_llm))
-    jobs.step(job_id, 3, "done", "")
-    if run_type == "rag_ingest" and kb.get_catalog(kb_name)["status"] != "ready":
-        if not any(chunks.values()):
-            kb.set_status(kb_name, "failed", "; ".join(failures) or "No readable documents")
-            raise rag.DocumentError("; ".join(failures) or "No readable documents")
-        kb.set_status(kb_name, "ready", "; ".join(failures) or None)
-    if failures and not any(chunks.values()):
-        raise rag.DocumentError("; ".join(failures))
+        jobs.step(job_id, 3, "running")
+        for name, cs in chunks.items():
+            if cs:
+                save_doc_pii(kb_name, name, rag.scan_pii(name, cs, use_llm=pii_llm))
+        jobs.step(job_id, 3, "done", "")
+        if run_type == "rag_ingest" and kb.get_catalog(kb_name)["status"] != "ready":
+            if not any(chunks.values()):
+                kb.set_status(kb_name, "failed", "; ".join(failures) or "No readable documents")
+                raise rag.DocumentError("; ".join(failures) or "No readable documents")
+            kb.set_status(kb_name, "ready", "; ".join(failures) or None)
+        if failures and not any(chunks.values()):
+            raise rag.DocumentError("; ".join(failures))

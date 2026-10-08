@@ -48,3 +48,20 @@ build/
 out/
 .next/
 .nuxt/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+
+# App data written at runtime
+uploads/
+
+# TurboQuant vector indexes (VECTOR_DIR default)
+backend/data/vectors/
+
+# RAGAS evaluation reports (RAGAS_REPORT_DIR default)
+backend/reports/ragas/

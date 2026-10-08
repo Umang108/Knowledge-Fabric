@@ -12,12 +12,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from app import chat, extraction, jobs, kb, pipelines, rag
+from app import chat, conversations, extraction, jobs, kb, nist_pii, pipelines, rag
 from app import graph_schema as gs
 from app.auth import CurrentUser, current_user
 from app.config import get_settings
 from app.db import get_conn
 from app.graphstore import GraphStore
+from app.observability import trace_context
 from app.tabular import TabularError
 
 router = APIRouter(prefix="/api", tags=["knowledge bases"])
@@ -76,6 +77,7 @@ def create_kb(
     kb_type: str = Form(...),
     domain: str = Form(...),
     sub_domain: str = Form(...),
+    session_id: str | None = Form(None),
     files: list[UploadFile] = File(...),
     user: CurrentUser = Depends(current_user),
 ):
@@ -90,17 +92,23 @@ def create_kb(
         allowed = GRAPH_EXT if kb_type == "graph" else rag.SUPPORTED
         if not (f.filename or "").lower().endswith(allowed):
             raise HTTPException(415, f"{f.filename}: unsupported file type (allowed: {', '.join(allowed)})")
-    storage = GraphStore(kb_name).storage_ref if kb_type == "graph" else f"chroma:{kb_name}"
+    storage = GraphStore(kb_name).storage_ref if kb_type == "graph" else f"turboquant:{kb_name}"
     kb.create(user, kb_name, kb_type, domain, sub_domain, storage)
     saved = [_save_upload(kb_name, f, GRAPH_EXT if kb_type == "graph" else rag.SUPPORTED) for f in files]
     fail = lambda msg: kb.set_status(kb_name, "failed", msg[:500])  # noqa: E731
     if kb_type == "graph":
         path, name = saved[0]
         job_id = jobs.create(kb_name, "graph_extract", pipelines.EXTRACT_STEPS, user.user_id, name)
-        jobs.submit(job_id, pipelines.graph_extract, kb_name, path, name, on_error=fail)
+        jobs.submit(
+            job_id, pipelines.graph_extract, kb_name, path, name, on_error=fail,
+            user_id=user.user_id, session_id=session_id or user.session_id, operation="kg_extraction",
+        )
     else:
         job_id = jobs.create(kb_name, "rag_ingest", pipelines.RAG_STEPS, user.user_id, ", ".join(n for _, n in saved))
-        jobs.submit(job_id, pipelines.rag_ingest, kb_name, saved, user.user_id, "rag_ingest", on_error=fail)
+        jobs.submit(
+            job_id, pipelines.rag_ingest, kb_name, saved, user.user_id, "rag_ingest",
+            on_error=fail, user_id=user.user_id, session_id=session_id or user.session_id, operation="rag_ingest",
+        )
     return {"kb_name": kb_name, "job_id": job_id}
 
 
@@ -152,14 +160,18 @@ def delete_kb(kb_name: str, user: CurrentUser = Depends(current_user)):
     if cat["kb_type"] == "graph":
         GraphStore(kb_name).drop()
     else:
-        rag.drop_collection(kb_name)
+        rag.drop_index(kb_name)
     removed = kb.delete(kb_name, user.user_id)
     shutil.rmtree(Path(get_settings().upload_dir) / kb_name, ignore_errors=True)
     return {"deleted": removed["kb_name"]}
 
 
 @router.post("/kbs/{kb_name}/extract")
-def rerun_extraction(kb_name: str, user: CurrentUser = Depends(current_user)):
+def rerun_extraction(
+    kb_name: str,
+    session_id: str | None = None,
+    user: CurrentUser = Depends(current_user),
+):
     cat = kb.require_access(user, kb_name, roles=("owner",))
     if cat["kb_type"] != "graph" or cat["status"] not in ("failed", "awaiting_review"):
         raise HTTPException(409, "Extraction can only be re-run for a graph that is failed or awaiting review")
@@ -182,6 +194,9 @@ def rerun_extraction(kb_name: str, user: CurrentUser = Depends(current_user)):
         str(matches[-1]),
         job["source_file"],
         on_error=lambda m: kb.set_status(kb_name, "failed", m[:500]),
+        user_id=user.user_id,
+        session_id=session_id or user.session_id,
+        operation="kg_extraction",
     )
     return {"job_id": job_id}
 
@@ -223,8 +238,9 @@ def _review_payload(cat: dict, schema: dict) -> dict:
         "schema": schema,
         "cypher": gs.preview(schema),
         "summary": gs.summary(schema),
-        "pii": schema.get("pii", []),
+        "pii": nist_pii.assess(schema.get("pii", []), schema.get("sheets", {})),  # older drafts get NIST fields too
         "pii_categories": extraction.PII_CATEGORIES,
+        "pii_catalogue": nist_pii.catalogue(),
     }
 
 
@@ -302,6 +318,9 @@ def submit_review(kb_name: str, body: SchemaBody, user: CurrentUser = Depends(cu
         kb_name,
         user.user_id,
         on_error=lambda m: kb.set_status(kb_name, "failed", f"Build failed: {m}"[:500]),
+        user_id=user.user_id,
+        session_id=user.session_id,
+        operation="kg_build",
     )
     return {"job_id": job_id}
 
@@ -383,6 +402,7 @@ def add_data(
     files: list[UploadFile] = File(...),
     merge_existing: bool = Form(True),
     skip_invalid: bool = Form(True),
+    session_id: str | None = Form(None),
     user: CurrentUser = Depends(current_user),
 ):
     cat = kb.require_access(user, kb_name)
@@ -390,7 +410,10 @@ def add_data(
     if cat["kb_type"] == "rag":
         saved = [_save_upload(kb_name, f, rag.SUPPORTED) for f in files]
         job_id = jobs.create(kb_name, "add_data", pipelines.RAG_STEPS, user.user_id, ", ".join(n for _, n in saved))
-        jobs.submit(job_id, pipelines.rag_ingest, kb_name, saved, user.user_id, "add_data")
+        jobs.submit(
+            job_id, pipelines.rag_ingest, kb_name, saved, user.user_id, "add_data",
+            user_id=user.user_id, session_id=session_id or user.session_id, operation="add_data",
+        )
         return {"job_id": job_id}
     if len(files) != 1:
         raise HTTPException(422, "Add one CSV or XLSX file at a time")
@@ -402,7 +425,10 @@ def add_data(
     if not check["matched"]:
         raise HTTPException(422, "No sheet in this file matches the knowledge graph's schema")
     job_id = jobs.create(kb_name, "add_data", pipelines.ADD_GRAPH_STEPS, user.user_id, name)
-    jobs.submit(job_id, pipelines.graph_add_data, kb_name, path, name, user.user_id, merge_existing, skip_invalid)
+    jobs.submit(
+        job_id, pipelines.graph_add_data, kb_name, path, name, user.user_id, merge_existing, skip_invalid,
+        user_id=user.user_id, session_id=session_id or user.session_id, operation="add_data",
+    )
     return {"job_id": job_id}
 
 
@@ -437,7 +463,9 @@ def run_report(kb_name: str, run_id: int, user: CurrentUser = Depends(current_us
 # ------------------------------------------------------------------ chat (owner or user)
 class ChatBody(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
-    history: list[dict] = []
+    conversation_id: int | None = None  # continue a saved conversation; omitted = start a new one
+    history: list[dict] = []  # only used by API clients that don't use saved conversations
+    session_id: str | None = None
 
 
 @router.post("/kbs/{kb_name}/chat")
@@ -445,11 +473,27 @@ def chat_with_kb(kb_name: str, body: ChatBody, user: CurrentUser = Depends(curre
     cat = kb.require_access(user, kb_name)
     if cat["status"] != "ready":
         raise HTTPException(409, f"The knowledge base is {cat['status']}, not ready for chat")
-    history = [{k: str(h.get(k, ""))[:2000] for k in ("question", "answer", "cypher")} for h in body.history[-5:]]
-    if cat["kb_type"] == "graph":
-        store = GraphStore(kb_name)
-        return {
-            "kind": "graph",
-            **chat.graph_answer(store, cat["approved_schema"], cat["approved_at"], body.question.strip(), history),
-        }
-    return {"kind": "rag", **chat.rag_answer(kb_name, body.question.strip(), history)}
+    question = body.question.strip()
+    if body.conversation_id:
+        conv = conversations.get(user, body.conversation_id)
+        if conv["kb_name"] != kb_name:
+            raise HTTPException(422, "That conversation belongs to another knowledge base")
+        history = conversations.history(conv["id"])
+    else:
+        conv = conversations.create(user, kb_name, question)
+        history = [{k: str(h.get(k, ""))[:2000] for k in ("question", "answer", "cypher")} for h in body.history[-5:]]
+    operation = "chat" if cat["kb_type"] == "graph" else "rag_chat"
+    # the conversation is the Langfuse session, so all turns of one chat are grouped
+    with trace_context(user.user_id, body.session_id or f"chat-{conv['id']}", operation, kb_name):
+        if cat["kb_type"] == "graph":
+            result = {
+                "kind": "graph",
+                **chat.graph_answer(GraphStore(kb_name), cat["approved_schema"], cat["approved_at"], question, history),
+            }
+        else:
+            try:
+                result = {"kind": "rag", **chat.rag_answer(kb_name, question, history)}
+            except rag.ServiceError as exc:
+                raise HTTPException(503, str(exc)) from None
+    conversations.add_message(user, conv["id"], question, result)
+    return {"conversation_id": conv["id"], "title": conv["title"], **result}

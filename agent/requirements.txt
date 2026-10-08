@@ -1,4 +1,4 @@
-# Graphbase agent (runs anywhere that can reach Keycloak and the MCP server)
+# TCS Knowledge Fabric agent (runs anywhere that can reach Keycloak and the MCP server)
 httpx==0.28.1
 anyio>=4.5
 langchain-core==1.6.6

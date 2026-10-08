@@ -1,21 +1,18 @@
-"""RAG documents: parse PDF/DOCX/TXT, chunk, embed into a per-KB Chroma collection, PII scan."""
+"""RAG documents: parse PDF/DOCX/TXT, chunk, embed into a per-KB TurboQuant index (app/vectorstore.py), PII scan."""
 
-import contextlib
-import hashlib
 import logging
 import re
 from collections import Counter
 from pathlib import Path
 
-import chromadb
-import chromadb.config
 from docx import Document as DocxDocument
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 
-from app import rules
+from app import nist_pii, rules, vectorstore
 from app.config import get_settings
 from app.llm import ask_json, get_embeddings
+from app.observability import observe_span
 
 log = logging.getLogger(__name__)
 
@@ -107,67 +104,96 @@ def chunk(pages: list[tuple[int | None, str]]) -> list[dict]:
     return out
 
 
-# ------------------------------------------------------------------ chroma
-def chroma_client():
+# ------------------------------------------------------------------ vector store (TurboQuant, app/vectorstore.py)
+class ServiceError(RuntimeError):
+    """A dependency of RAG (vector store or embedding model) failed; the message says which and what to check."""
+
+
+def _vector_store_error(what: str, exc: Exception) -> ServiceError:
     s = get_settings()
-    return chromadb.HttpClient(
-        host=s.chroma_host, port=s.chroma_port, settings=chromadb.config.Settings(anonymized_telemetry=False)
-    )
+    msg = str(exc).strip() or type(exc).__name__
+    where = f"TurboQuant index in {s.vector_dir}"
+    if isinstance(exc, vectorstore.VectorStoreError):
+        return ServiceError(f"Vector store ({where}) failed while {what}: {msg}")
+    if isinstance(exc, ModuleNotFoundError) and "turbovec" in msg:
+        hint = "the turbovec package is not installed; run pip install -r requirements.txt in the backend folder"
+    elif "no space" in msg.lower():
+        hint = "the disk holding VECTOR_DIR is full"
+    elif isinstance(exc, OSError) and exc.errno is not None and not isinstance(exc, TimeoutError | ConnectionError):
+        hint = (
+            "the backend cannot write to VECTOR_DIR. Set VECTOR_DIR in .env to a folder the backend user can write, "
+            "and use the same folder for the MCP server"
+        )
+    elif "rag_chunks" in msg:
+        hint = "the rag_chunks table is missing; restart the backend (or run python -m app.cli migrate)"
+    else:
+        hint = "run python -m app.cli doctor for details"
+    return ServiceError(f"Vector store ({where}) failed while {what}: {type(exc).__name__}: {msg}. Hint: {hint}.")
 
 
-def collection(kb_name: str):
-    return chroma_client().get_or_create_collection(kb_name, metadata={"hnsw:space": "cosine"})
+def _embedding_error(exc: Exception) -> ServiceError:
+    s = get_settings()
+    msg = str(exc).strip() or type(exc).__name__
+    if s.llm_provider == "azure":
+        hint = (
+            f"check AZURE_OPENAI_ENDPOINT (now '{s.azure_openai_endpoint}'), the API key and "
+            f"AZURE_OPENAI_EMBED_DEPLOYMENT (now '{s.azure_openai_embed_deployment}'), which must be the name of an "
+            "embedding deployment in that Azure OpenAI resource"
+        )
+    else:
+        hint = f"check OLLAMA_BASE_URL and run `ollama pull {s.ollama_embed_model}`"
+    return ServiceError(f"Embedding model ({s.llm_provider}) failed: {type(exc).__name__}: {msg[:300]}. Hint: {hint}.")
 
 
-def drop_collection(kb_name: str) -> None:
-    with contextlib.suppress(Exception):  # the collection may not exist
-        chroma_client().delete_collection(kb_name)
+def _store(what: str, fn):
+    try:
+        return fn()
+    except ServiceError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - reported with a hint
+        raise _vector_store_error(what, exc) from exc
+
+
+def _embed(fn):
+    try:
+        return fn()
+    except Exception as exc:  # noqa: BLE001
+        raise _embedding_error(exc) from exc
+
+
+def drop_index(kb_name: str) -> None:
+    """Remove a knowledge base's vectors and chunks (nothing happens if it has none)."""
+    _store("deleting the index", lambda: vectorstore.drop(kb_name))
 
 
 def store_chunks(kb_name: str, filename: str, chunks: list[dict], run_id: int | None = None, progress=None) -> int:
-    """Replace any earlier version of this document, then add its chunks."""
-    col = collection(kb_name)
-    col.delete(where={"source": filename})
+    """Embed the chunks, then replace any earlier version of this document with them in one step."""
     emb = get_embeddings()
-    doc_id = hashlib.sha1(filename.encode()).hexdigest()[:12]
     batch = 32
+    vectors: list[list[float]] = []
     for i in range(0, len(chunks), batch):
         part = chunks[i : i + batch]
         # the file name is embedded with the text so questions naming a document find it
-        vectors = emb.embed_documents([f"{filename}\n{c['text']}" for c in part])
-        col.add(
-            ids=[f"{doc_id}-{i + j}" for j in range(len(part))],
-            documents=[c["text"] for c in part],
-            embeddings=vectors,
-            metadatas=[
-                {"source": filename, "page": c["page"] or 0, "chunk": i + j, "run_id": run_id or 0}
-                for j, c in enumerate(part)
-            ],
-        )
+        vectors += _embed(lambda part=part: emb.embed_documents([f"{filename}\n{c['text']}" for c in part]))
         if progress:
             progress(min(i + batch, len(chunks)) / len(chunks))
-    return len(chunks)
+    rows = [{"text": c["text"], "page": c["page"], "chunk": n, "run_id": run_id} for n, c in enumerate(chunks)]
+    return _store("saving chunks", lambda: vectorstore.replace_source(kb_name, filename, rows, vectors))
 
 
 def retrieve(kb_name: str, question: str, k: int = 6) -> list[dict]:
-    col = collection(kb_name)
-    if col.count() == 0:
-        return []
-    res = col.query(
-        query_embeddings=[get_embeddings().embed_query(question)],
-        n_results=min(k, col.count()),
-        include=["documents", "metadatas", "distances"],
-    )
-    return [
-        {"text": d, "source": m["source"], "page": m.get("page") or None, "score": round(1 - dist, 4)}
-        for d, m, dist in zip(res["documents"][0], res["metadatas"][0], res["distances"][0], strict=False)
-    ]
+    with observe_span("TurboQuant Retrieval", {"knowledge_base": kb_name, "top_k": k}):
+        if _store("opening the index", lambda: vectorstore.count(kb_name)) == 0:
+            return []
+        vector = _embed(lambda: get_embeddings().embed_query(question))
+        hits = _store("searching", lambda: vectorstore.search(kb_name, vector, k))
+        return [
+            {"text": h["text"], "source": h["source"], "page": h["page"] or None, "score": h["score"]} for h in hits
+        ]
 
 
 def documents(kb_name: str) -> dict[str, int]:
-    col = collection(kb_name)
-    got = col.get(include=["metadatas"])
-    return dict(Counter(m["source"] for m in got["metadatas"]))
+    return _store("listing documents", lambda: vectorstore.documents(kb_name))
 
 
 # ------------------------------------------------------------------ PII scan
@@ -212,17 +238,24 @@ def scan_pii(filename: str, chunks: list[dict], use_llm: bool = True) -> list[di
             log.warning("PII name scan failed for %s: %s", filename, exc)
             names_by = "unavailable"
     out = []
-    sens = {"government_id": "high", "date_of_birth": "high", "person_name": "low"}
     for cat, n in counts.items():
         if n <= 0:
             continue
         by_rules = cat != "person_name"
+        level = nist_pii.document_level(cat)
         out.append(
             {
                 "source_document": filename,
                 "pii_category": cat,
                 "occurrences": n,
-                "sensitivity": sens.get(cat, "medium"),
+                "sensitivity": nist_pii.SENSITIVITY[level],
+                "nist_identifier": nist_pii.CATEGORIES[cat][1],
+                "nist_impact": level,
+                "nist_factors": [
+                    f"data field sensitivity: {nist_pii.CATEGORIES[cat][2]} ({nist_pii.CATEGORIES[cat][3]})",
+                    "context: mentioned in a document, linked to the people it names",
+                    f"quantity: {n} occurrence(s)",
+                ],
                 "confidence": 0.95 if by_rules else 0.7,
                 "detected_by": "rules" if by_rules else names_by,
                 "reason": f"{n} {cat.replace('_', ' ')} occurrence(s) found",

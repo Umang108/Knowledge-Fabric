@@ -154,7 +154,7 @@ def create_kb_from_connection(body: FromConnectionBody, user: CurrentUser = Depe
         raise HTTPException(422, "Domain and sub-domain are required")
     datasets = _datasets(row, body.datasets)
     label = KINDS[row["kind"]].label
-    storage = GraphStore(kb_name).storage_ref if body.kb_type == "graph" else f"chroma:{kb_name}"
+    storage = GraphStore(kb_name).storage_ref if body.kb_type == "graph" else f"turboquant:{kb_name}"
     kb.create(user, kb_name, body.kb_type, domain, sub_domain, storage)
     fail = lambda msg: kb.set_status(kb_name, "failed", msg[:500])  # noqa: E731
     source = f"{label}: {', '.join(d['source'] for d in datasets)}"[:300]
@@ -162,10 +162,16 @@ def create_kb_from_connection(body: FromConnectionBody, user: CurrentUser = Depe
         job_id = jobs.create(
             kb_name, "graph_extract", [cp.fetch_step(label), *pipelines.EXTRACT_STEPS], user.user_id, source
         )
-        jobs.submit(job_id, cp.graph_from_connection, kb_name, row, datasets, on_error=fail)
+        jobs.submit(
+            job_id, cp.graph_from_connection, kb_name, row, datasets, on_error=fail,
+            user_id=user.user_id, session_id=user.session_id, operation="kg_extraction",
+        )
     else:
         job_id = jobs.create(kb_name, "rag_ingest", [cp.fetch_step(label), *pipelines.RAG_STEPS], user.user_id, source)
-        jobs.submit(job_id, cp.rag_from_connection, kb_name, row, datasets, user.user_id, "rag_ingest", on_error=fail)
+        jobs.submit(
+            job_id, cp.rag_from_connection, kb_name, row, datasets, user.user_id, "rag_ingest",
+            on_error=fail, user_id=user.user_id, session_id=user.session_id, operation="rag_ingest",
+        )
     return {"kb_name": kb_name, "job_id": job_id}
 
 
@@ -185,7 +191,10 @@ def add_data_from_connection(kb_name: str, body: AddFromConnectionBody, user: Cu
         if row["kind"] != "servicenow":
             raise HTTPException(422, f"{label} data can't be added to a RAG store")
         job_id = jobs.create(kb_name, "add_data", [cp.fetch_step(label), *pipelines.RAG_STEPS], user.user_id, source)
-        jobs.submit(job_id, cp.rag_from_connection, kb_name, row, datasets, user.user_id, "add_data", since)
+        jobs.submit(
+            job_id, cp.rag_from_connection, kb_name, row, datasets, user.user_id, "add_data", since,
+            user_id=user.user_id, session_id=user.session_id, operation="add_data",
+        )
         return {"job_id": job_id}
     job_id = jobs.create(kb_name, "add_data", [cp.fetch_step(label), *pipelines.ADD_GRAPH_STEPS], user.user_id, source)
     jobs.submit(
@@ -198,5 +207,8 @@ def add_data_from_connection(kb_name: str, body: AddFromConnectionBody, user: Cu
         since,
         body.merge_existing,
         body.skip_invalid,
+        user_id=user.user_id,
+        session_id=user.session_id,
+        operation="add_data",
     )
     return {"job_id": job_id}

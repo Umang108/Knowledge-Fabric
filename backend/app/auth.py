@@ -45,6 +45,9 @@ class CurrentUser:
     session_id: str | None = None
 
 
+SESSION_ENDED = "Your session has ended"
+
+
 def _unauthorized(detail: str = "Not signed in or the session has expired") -> HTTPException:
     return HTTPException(status.HTTP_401_UNAUTHORIZED, detail)
 
@@ -151,6 +154,50 @@ def revoke_user_sessions(user_id: str, reason: str, actor: str) -> int:
         ).rowcount
 
 
+def public_session_id(session_id: str) -> str:
+    """What the UI and traces see for a session: derived from, never equal to, the sessions table key."""
+    return hashlib.sha256(session_id.encode()).hexdigest()[:16]
+
+
+def describe_agent(user_agent: str | None) -> str:
+    ua = user_agent or ""
+    browser = next(
+        (name for key, name in (("Edg/", "Edge"), ("OPR/", "Opera"), ("Chrome/", "Chrome"), ("Firefox/", "Firefox"),
+                                ("Safari/", "Safari")) if key in ua),
+        "Unknown browser" if ua else "Unknown client",
+    )
+    system = next(
+        (name for key, name in (("Windows", "Windows"), ("Android", "Android"), ("iPhone", "iOS"), ("iPad", "iOS"),
+                                ("Mac OS X", "macOS"), ("Linux", "Linux")) if key in ua),
+        "",
+    )
+    return f"{browser} on {system}" if system else browser
+
+
+def active_sessions(user_id: str) -> list[dict]:
+    with get_conn() as conn:
+        return conn.execute(
+            """SELECT * FROM sessions WHERE user_id = %s AND revoked_at IS NULL
+                      AND expires_at > now() AND idle_expires_at > now()
+               ORDER BY last_seen_at DESC""",
+            (user_id,),
+        ).fetchall()
+
+
+def session_timing(token: str | None) -> dict | None:
+    """Expiry of the session behind a cookie, without extending it (for the idle-timeout warning)."""
+    if not token:
+        return None
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT expires_at, idle_expires_at, revoked_at FROM sessions WHERE id = %s", (hash_token(token),)
+        ).fetchone()
+    now = _now()
+    if not row or row["revoked_at"] or now >= row["expires_at"] or now >= row["idle_expires_at"]:
+        return None
+    return {"server_time": now, "idle_expires_at": row["idle_expires_at"], "expires_at": row["expires_at"]}
+
+
 def clear_cookie(response: Response) -> None:
     s = get_settings()
     response.delete_cookie(
@@ -173,7 +220,7 @@ def current_user(request: Request) -> CurrentUser:
         ).fetchone()
     now = _now()
     if not row or row["revoked_at"] or now >= row["expires_at"] or now >= row["idle_expires_at"]:
-        raise _unauthorized()
+        raise _unauthorized(SESSION_ENDED)  # a cookie was sent: the session timed out or was signed out
     if not row["is_active"]:
         revoke_session(session_id, "user deactivated", "system")
         raise _unauthorized("User is disabled")
@@ -182,7 +229,8 @@ def current_user(request: Request) -> CurrentUser:
         raise _unauthorized()
     if row["auth_source"] == "keycloak" and row["kc_access_expires_at"] and now >= row["kc_access_expires_at"]:
         _refresh_keycloak_session(session_id, row, s)
-    if now - row["last_seen_at"] > LAST_SEEN_RESOLUTION:
+    idle = dt.timedelta(minutes=s.session_idle_minutes)
+    if now - row["last_seen_at"] > LAST_SEEN_RESOLUTION or row["idle_expires_at"] - now < idle - LAST_SEEN_RESOLUTION:
         with get_conn() as conn:
             conn.execute(
                 "UPDATE sessions SET last_seen_at = now(), idle_expires_at = %s WHERE id = %s",

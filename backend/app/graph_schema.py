@@ -202,6 +202,7 @@ def summary(schema: dict) -> dict:
         "node_types": len(schema["nodes"]),
         "entities": sum(n.get("count") or 0 for n in schema["nodes"]),
         "relationship_types": len({r["type"] for r in schema["relationships"]}),
+        "relationships": sum(r.get("count") or 0 for r in schema["relationships"]),
     }
 
 

@@ -1,12 +1,12 @@
 {
   "realm": "graphbase",
   "enabled": true,
-  "displayName": "Graphbase (local test)",
+  "displayName": "TCS Knowledge Fabric (local test)",
   "accessTokenLifespan": 1800,
   "clients": [
     {
       "clientId": "graphbase-app",
-      "name": "Graphbase",
+      "name": "TCS Knowledge Fabric",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -36,7 +36,7 @@
     },
     {
       "clientId": "graphbase-mcp",
-      "name": "Graphbase MCP server (token audience only)",
+      "name": "TCS Knowledge Fabric MCP server (token audience only)",
       "enabled": true,
       "publicClient": false,
       "secret": "change-me-not-used-for-login",
@@ -47,7 +47,7 @@
     },
     {
       "clientId": "graphbase-agent",
-      "name": "Graphbase agent",
+      "name": "TCS Knowledge Fabric agent",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": false,

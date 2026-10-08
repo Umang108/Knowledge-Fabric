@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
-import { ErrorBox, usePoll } from "../components/common.jsx";
+import { ErrorBox, ProgressBar, usePoll } from "../components/common.jsx";
 
 const TITLES = {
   graph_extract: "Extracting your knowledge graph", graph_build: "Building your knowledge graph",
@@ -23,7 +23,9 @@ export default function Processing() {
     if (job?.status !== "succeeded") return;
     const t = setTimeout(() => {
       if (job.job_type === "graph_extract") navigate(`/kbs/${kb}/review`, { replace: true });
-      else if (job.job_type === "graph_build") navigate(`/chat?kb=${kb}`, { replace: true });
+      else if (job.job_type === "graph_build" || job.job_type === "rag_ingest" || job.job_type === "add_data") {
+        navigate(`/chat?kb=${kb}`, { replace: true });
+      }
     }, 800);
     return () => clearTimeout(t);
   }, [job, kb, navigate]);
@@ -38,15 +40,17 @@ export default function Processing() {
   };
 
   return (
-    <div className="page" style={{ alignItems: "center", justifyContent: "center", background: "#e9ebea" }}>
-      <div className="card" style={{ width: 600, maxWidth: "100%", padding: 32, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="page processing-page" style={{ alignItems: "center", justifyContent: "center", background: "#e9ebea" }}>
+      <div className="card processing-card" style={{ width: 600, maxWidth: "100%", padding: 32, display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
+          <div className={`processing-status ${job?.status || "loading"}`}>
+            <span className="processing-status-dot" />
+            {job?.status === "failed" ? "Action needs attention" : job?.status === "succeeded" ? "Complete" : "In progress"}
+          </div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>{TITLES[job?.job_type] || "Working"}</div>
           <div className="muted">{job?.source_file} for {kb}</div>
         </div>
-        <div className="bar" aria-label="progress" aria-valuenow={Math.round(job?.progress || 0)} role="progressbar">
-          <div style={{ width: `${job?.progress || 0}%` }} />
-        </div>
+        <ProgressBar value={job?.progress} label="Job progress" />
         <div>
           {(job?.steps || []).map((s, i) => {
             const state = job.status === "failed" && s.status === "running" ? "failed" : s.status;

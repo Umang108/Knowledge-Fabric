@@ -14,25 +14,14 @@ import re
 from collections import Counter, defaultdict
 
 from app import graph_schema as gs
-from app import rules
+from app import nist_pii, rules
 from app.config import get_settings
 from app.llm import ask_json
 from app.tabular import Sheet, coerce, is_blank, norm_key
 
 log = logging.getLogger(__name__)
 
-PII_CATEGORIES = [
-    "person_name",
-    "email",
-    "phone",
-    "address",
-    "date_of_birth",
-    "government_id",
-    "bank_account",
-    "financial",
-    "free_text",
-    "other",
-]
+PII_CATEGORIES = list(nist_pii.CATEGORIES)  # NIST SP 800-122 based categories (app/nist_pii.py)
 LINK_OVERLAP = 0.6
 UNIQUE = 0.95  # distinct ratio treated as unique (tolerates a few duplicate rows)
 
@@ -159,7 +148,10 @@ Return one JSON object. Use exact sheet and column names from the data:
     "confidence": 0.0
 }}]}}"""
 
-PII_SYSTEM = "You are a data-privacy auditor. You classify spreadsheet columns. Reply with one JSON object only."
+PII_SYSTEM = (
+    "You are a data-privacy auditor applying NIST SP 800-122 (PII confidentiality) and the NIST Privacy Framework. "
+    "You classify spreadsheet columns. Reply with one JSON object only."
+)
 
 PII_PROMPT = """Classify every column of sheet "{sheet}" for personal data (PII) about individual people.
 
@@ -168,10 +160,21 @@ Columns (type; example values):
 
 {data_instruction}
 
-For EACH column choose one category:
-person_name (a person's name), email, phone, address, date_of_birth, government_id (PAN, Aadhaar, passport),
-bank_account, financial (salary, card), free_text (notes/comments that can mention people), or none.
-Company names, product names, cities, regions, record IDs/codes, quantities, prices and status values are none.
+PII (NIST SP 800-122) is information about an individual PERSON that distinguishes or traces their identity
+(direct identifiers) or is linked or linkable to them. For EACH column choose one category:
+Direct identifiers:
+  person_name (a person's full or partial name), email (personal e-mail), phone (personal phone number),
+  address (street/postal address of a person), government_id (SSN, PAN, Aadhaar, passport, driver's licence,
+  tax id), bank_account (bank/IBAN/card number), personal_id (number assigned to a person: patient MRN/UHID,
+  employee or member number), biometric (fingerprint, face image, voice print), online_identifier (IP/MAC
+  address or device id of a person)
+Linked or linkable information about a person:
+  date_of_birth, demographic (gender, race, religion, caste, nationality, marital status), health (diagnosis,
+  condition, allergy, medical history), financial (salary, income, credit score), location (precise GPS of a
+  person), free_text (notes/comments that can mention people)
+or none.
+Not PII (choose none): company/organisation names, product names, cities/regions/countries alone, record IDs of
+orders/invoices/products/tickets, quantities, prices, dates of business events and status values.
 
 JSON, with one entry per column:
 {{"columns": [{{"column": "<name>", "category": "<category>", "confidence": 0.0-1.0}}]}}"""
@@ -947,7 +950,34 @@ _NAME_RULES = [
         "column holds a national ID",
     ),
     (re.compile(r"\b(address|street)\b", re.I), "address", "medium", "column holds postal addresses"),
+    (
+        re.compile(r"\b(gender|sex|race|ethnicity|religion|caste|nationality|marital[\s_]*status)\b", re.I),
+        "demographic",
+        "medium",
+        "column holds personal characteristics (NIST SP 800-122)",
+    ),
+    (
+        re.compile(r"\b(diagnos\w*|medical[\s_]*(condition|history)|allerg\w*|disease|blood[\s_]*group)\b", re.I),
+        "health",
+        "high",
+        "column holds medical information",
+    ),
+    (
+        re.compile(r"\b(biometric|fingerprint|face[\s_]*(image|id)|voice[\s_]*print)\b", re.I),
+        "biometric",
+        "high",
+        "column holds biometric records",
+    ),
+    (
+        re.compile(r"\b(mrn|uhid|patient[\s_]*(id|no|number)|employee[\s_]*(id|no|number)|emp[\s_]*id)\b", re.I),
+        "personal_id",
+        "medium",
+        "column holds identification numbers assigned to people",
+    ),
 ]
+
+_LOCATION_NAME = re.compile(r"latitude|longitude|\blat\b|\blon\b|\bgps\b|geo[\s_]*location|coordinates", re.I)
+_IP_OR_MAC = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}|(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}", re.I)
 
 
 _MACHINE_ID = re.compile(r"[0-9a-f]{16,}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.I)
@@ -963,7 +993,9 @@ def rule_pii(sheet: Sheet, column: str) -> dict | None:
     vals = [str(v).strip() for v in sheet.values(column) if not is_blank(v)]
     if not vals:
         return None
-    if sheet.profile[column].type in ("string", "date"):
+    if sheet.profile[column].type in ("string", "date") or (
+        sheet.profile[column].type == "integer" and re.search(r"mrn|uhid|patient|employee|emp", column, re.I)
+    ):
         for rx, cat, sens, reason in _NAME_RULES:
             if rx.search(column):
                 return {"category": cat, "sensitivity": sens, "confidence": 0.85, "reason": reason}
@@ -977,6 +1009,13 @@ def rule_pii(sheet: Sheet, column: str) -> dict | None:
             "sensitivity": "medium",
             "confidence": 0.95,
             "reason": "values are e-mail addresses",
+        }
+    if ratio(_IP_OR_MAC) >= 0.5:
+        return {
+            "category": "online_identifier",
+            "sensitivity": "medium",
+            "confidence": 0.9,
+            "reason": "values are IP or MAC addresses",
         }
     if ratio(rules.PHONE) >= 0.5:
         return {"category": "phone", "sensitivity": "medium", "confidence": 0.9, "reason": "values are phone numbers"}
@@ -999,18 +1038,6 @@ def rule_pii(sheet: Sheet, column: str) -> dict | None:
     return None
 
 
-_SENSITIVITY = {
-    "person_name": "low",
-    "email": "medium",
-    "phone": "medium",
-    "address": "medium",
-    "free_text": "medium",
-    "date_of_birth": "high",
-    "government_id": "high",
-    "bank_account": "high",
-    "financial": "high",
-    "other": "medium",
-}
 
 
 def verify_pii(sheet: Sheet, column: str, category: str) -> bool:
@@ -1048,6 +1075,15 @@ def verify_pii(sheet: Sheet, column: str, category: str) -> bool:
         return p.type == "string" and not _machine_ids(texts) and sum(len(t) for t in texts) / len(texts) > 15
     if category == "financial":
         return bool(re.search(r"salary|income|wage|card|credit|payroll", column, re.I))
+    if category in ("demographic", "health", "biometric", "personal_id"):
+        rule = rule_pii(sheet, column)
+        return bool(rule and rule["category"] == category)
+    if category == "online_identifier":
+        return share(lambda t: bool(_IP_OR_MAC.fullmatch(t))) >= 0.5 or bool(
+            re.search(r"\b(ip|mac)[\s_]*(address)?\b|device[\s_]*id", column, re.I)
+        )
+    if category == "location":
+        return bool(_LOCATION_NAME.search(column))
     return False
 
 
@@ -1089,7 +1125,7 @@ def detect_pii(sheet: Sheet, columns: list[str]) -> list[dict]:
                     found[col] = {
                         "column": col,
                         "category": cat,
-                        "sensitivity": _SENSITIVITY[cat],
+                        "sensitivity": nist_pii.SENSITIVITY[nist_pii.CATEGORIES[cat][2]],
                         "confidence": conf,
                         "reason": f"LLM classified the column as {cat.replace('_', ' ')}; values are consistent",
                         "detected_by": "llm",
@@ -1161,7 +1197,7 @@ def extract(sheets: list[Sheet], file_name: str, step=None, cancelled=None) -> d
             pii.append({"sheet": s.name, **item})
         if check():
             return {}
-    schema["pii"] = pii
+    schema["pii"] = nist_pii.assess(pii, schema["sheets"])
     step(4, "done", f"{len(pii)} PII columns")
     return schema
 
@@ -1232,7 +1268,6 @@ def clean_pii(items, sheets: dict) -> list[dict]:
             "sheet": sheet,
             "column": column,
             "category": category,
-            "sensitivity": _SENSITIVITY[category],
             "confidence": round(confidence, 3),
             "reason": reason[:300],
             "detected_by": source,
@@ -1240,7 +1275,7 @@ def clean_pii(items, sheets: dict) -> list[dict]:
         }
     if errors:
         raise gs.SchemaError(errors)
-    return list(out.values())
+    return nist_pii.assess(list(out.values()), sheets)
 
 
 def active_pii(schema: dict) -> list[dict]:

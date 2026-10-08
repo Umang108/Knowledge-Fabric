@@ -76,12 +76,12 @@ export default function Access() {
             <div className="section">Grant access</div>
             <div className="row" style={{ flexWrap: "wrap" }}>
               <div className="grow" style={{ minWidth: 200 }}>
-                <label className="lbl" htmlFor="grant-user">User ID</label>
+                <label className="lbl req" htmlFor="grant-user">User ID</label>
                 <input id="grant-user" className="inp" value={userId} onChange={(e) => setUserId(e.target.value)}
                        placeholder="e.g. meera.s" required />
               </div>
               <div style={{ width: 220 }}>
-                <label className="lbl" htmlFor="grant-role">Role</label>
+                <label className="lbl req" htmlFor="grant-role">Role</label>
                 <select id="grant-role" className="inp" defaultValue="user">
                   <option value="user">User (chat and add data)</option>
                 </select>
@@ -103,7 +103,7 @@ export default function Access() {
                     <td>{p.role === "owner" ? <span className="badge">Owner</span> : <span className="badge g">User</span>}</td>
                     <td className={p.role === "owner" ? "muted" : ""}>{p.role === "owner" ? "Created the base" : p.granted_by}</td>
                     <td>{formatDate(p.granted_at)}</td>
-                    <td>{p.role !== "owner" && <button className="btn danger sm" onClick={() => revoke(p.user_id)}>Revoke</button>}</td>
+                    <td>{p.role !== "owner" && <button className="act danger" onClick={() => revoke(p.user_id)}>Revoke</button>}</td>
                   </tr>
                 ))}
               </tbody>

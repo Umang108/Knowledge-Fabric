@@ -2,7 +2,7 @@
 
 Covers the connectors themselves (paging, auth, retries, value cleaning, incremental pulls), the saved-connection
 API (secrets encrypted, owner-only), and the end-to-end flows: build a graph KB or a RAG KB from a connection,
-then refresh it with "add data from connection". Neo4j writes go to an in-memory store; Chroma is real.
+then refresh it with "add data from connection". Neo4j writes go to an in-memory store; the TurboQuant store is real.
 """
 
 import re
@@ -413,7 +413,7 @@ def test_rag_kb_from_servicenow_knowledge_is_searchable(client, app_env, service
 
     priya = app_env["priya"]
     c = _connect(client, priya, servicenow)
-    rag.drop_collection("t_sn_kb_rag")
+    rag.drop_index("t_sn_kb_rag")
     try:
         r = client.post(
             "/api/kbs/from-connection",
@@ -443,7 +443,7 @@ def test_rag_kb_from_servicenow_knowledge_is_searchable(client, app_env, service
         assert jobs.wait(r.json()["job_id"], timeout=120)["status"] == "succeeded"
         assert len(rag.documents("t_sn_kb_rag")) == 4  # the one changed article replaced, not duplicated
     finally:
-        rag.drop_collection("t_sn_kb_rag")
+        rag.drop_index("t_sn_kb_rag")
 
 
 def test_graph_kb_from_sap_links_orders_to_partners(client, app_env, sap):

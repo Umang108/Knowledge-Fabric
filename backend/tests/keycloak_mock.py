@@ -1,6 +1,6 @@
 """A stand-in Keycloak realm for tests, served over real HTTP.
 
-Implements the parts of Keycloak's OpenID Connect API that Graphbase's MCP server and agent use, with
+Implements the parts of Keycloak's OpenID Connect API that TCS Knowledge Fabric's MCP server and agent use, with
 Keycloak's URL layout and access-token claims:
 
   GET  /realms/{realm}/.well-known/openid-configuration

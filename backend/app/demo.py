@@ -322,7 +322,9 @@ def seed(samples: Path = SAMPLES, use_llm_pii: bool = False, log=print) -> None:
         kb.grant(_user("arjun.mehta"), "finance_ledger_kg", "priya.nair")
     if not exists("retail_policies_rag"):
         log("indexing retail_policies_rag (RAG, owner priya.nair)")
-        kb.create(_user("priya.nair"), "retail_policies_rag", "rag", "Retail", "Policies", "chroma:retail_policies_rag")
+        kb.create(
+            _user("priya.nair"), "retail_policies_rag", "rag", "Retail", "Policies", "turboquant:retail_policies_rag"
+        )
         files = [(str(samples / n), n) for n in ("returns_policy.pdf", "vendor_handbook.docx", "warehouse_sop.txt")]
         job_id = jobs.create(
             "retail_policies_rag", "rag_ingest", pipelines.RAG_STEPS, "priya.nair", ", ".join(n for _, n in files)

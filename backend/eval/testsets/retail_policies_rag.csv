@@ -1,0 +1,10 @@
+id,question,reference
+returns-window,What is the standard return window?,Customers may return products within 30 days of delivery with proof of purchase. The earlier 45-day window was superseded on 1 January 2025.
+electronics-fee,What is the restocking fee for electronics?,"Electronics carry a restocking fee of 12% of the item price, and the return window for electronics is 15 days."
+payment-terms,What are the vendor payment terms?,Invoices are paid on net 45 day terms from the date a correct invoice is received; a 1.5% early-payment discount is available for invoices paid within 10 days.
+late-penalty,What is the late delivery penalty?,"Late deliveries attract a penalty of 2% of the purchase order value for each week of delay, capped at 10% of the purchase order value."
+cold-room,What temperature must the Chennai cold room be kept at?,The Chennai warehouse cold room must be held between 2 and 8 degrees Celsius.
+dock-hours,What are the inbound dock hours?,"Inbound docks are open 06:00 to 14:00, Monday to Saturday."
+refund-time,How long do refunds take?,Approved refunds are processed within 7 working days; UPI and card refunds may take a further 3 to 5 bank working days to appear.
+furniture-fee,Is there a restocking fee for furniture?,Yes. Furniture can be returned within 30 days and carries a restocking fee of 8% of the item price.
+not-in-docs,What is the company's parental leave policy?,The documents do not contain a parental leave policy.

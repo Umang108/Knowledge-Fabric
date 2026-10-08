@@ -1,0 +1,3 @@
+id,question,reference
+q1,<a question users would ask>,"<the correct answer, in a full sentence, as the documents state it>"
+q2,<a question without a known answer: leave reference empty>,

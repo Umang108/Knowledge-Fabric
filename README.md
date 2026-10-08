@@ -1,7 +1,7 @@
-# Graphbase
+# TCS Knowledge Fabric
 
 Knowledge Graph + RAG studio: upload spreadsheets to build a reviewed Neo4j knowledge graph, or documents
-to build a ChromaDB RAG store, share them with colleagues, and chat with them. See `CLAUDE.md` for the
+to build a RAG store (TurboQuant vector index), share them with colleagues, and chat with them. See `CLAUDE.md` for the
 spec and the decisions taken.
 
 ## Run
@@ -18,7 +18,6 @@ docker compose exec backend python -m app.cli seed-demo-data   # optional: the m
 | API docs | http://localhost:8000/docs |
 | Neo4j    | http://localhost:7474 (`neo4j` / password from `.env`) |
 | Postgres | localhost:5433 |
-| Chroma   | localhost:8001 |
 | Keycloak | http://localhost:8080 (admin / admin), only with the `keycloak` profile |
 
 Ollama runs on the host at `localhost:11434`. The `ollama-proxy` profile (on by default via
@@ -64,6 +63,12 @@ UI use the LLM.
   under a `KB_<name>` label and rewrites chat Cypher so each node pattern is scoped to it;
   `NEO4J_MODE=multi` (Enterprise) creates one database per KB. Chat Cypher is always checked to be
   read-only and runs in a read transaction.
+- **RAG vector store** (`app/vectorstore.py`): Google's TurboQuant vector quantization through the `turbovec`
+  library. Each document knowledge base is one index file, `VECTOR_DIR/<kb_name>.tvim`, holding every chunk's
+  embedding compressed to `TURBOQUANT_BITS` (default 4) bits per coordinate; the chunk text and metadata are in the
+  Postgres table `rag_chunks`. There is no vector database server: the backend and the MCP server load the index
+  files themselves, so both must use the same `VECTOR_DIR` (default `backend/data/vectors`; the `vectors` volume in
+  Docker Compose). Search is cosine similarity, as before. Back up `VECTOR_DIR` together with Postgres.
 - **Access** (`app/kb.py`) is checked on the server for every request; `kb_access` is the audit trail.
 - **PII** (`kb_pii_fields`) is detected automatically for graph columns and RAG documents; raw values are
   never stored.
@@ -107,6 +112,108 @@ python -m graphbase_agent --login password --username priya.nair "Which supplier
 Any other MCP client works too: point it at `<MCP_PUBLIC_URL>/mcp` with a Keycloak token; the protected-resource
 metadata is at `/.well-known/oauth-protected-resource/mcp`.
 
+## Checking the setup
+
+`python -m app.cli doctor` (from `backend/`, with the same `.env` as uvicorn) checks Postgres, the upload folder,
+the TurboQuant vector store (a real save, search and delete), the embedding model, the chat model and Neo4j, and says
+what to fix. RAG errors name the failing service, e.g. "Vector store (TurboQuant index in /path) failed ... Hint: ...".
+
+All document knowledge bases use TurboQuant. If a knowledge base has no documents, upload them again through the
+application so they are chunked, embedded, and saved to its TurboQuant index.
+
+## RAGAS evaluation (TurboQuant RAG and graph responses)
+
+`python -m app.cli eval-ragas` measures how well either knowledge-base type answers. Every question in a test set is
+answered exactly as in the chat, then [RAGAS](https://docs.ragas.io) scores the answer. RAG knowledge bases use the
+TurboQuant index for retrieval; graph knowledge bases use the read-only, KB-scoped graph chat flow. ChromaDB is not
+used:
+
+| Metric | What it checks (0-1, higher is better) | Needs a reference answer |
+|---|---|---|
+| faithfulness | every claim in the answer is supported by the retrieved passages (no hallucination) | no |
+| answer_relevancy | the answer addresses the question | no |
+| context_precision | the useful passages are ranked first | no (uses it when given) |
+| context_recall | the passages contain everything the reference answer needs | yes |
+| factual_correctness | the answer agrees with the reference answer | yes |
+
+```bash
+cd backend
+uv sync                                  # installs the application and RAGAS dependencies from pyproject.toml
+python -m app.cli eval-ragas --kb retail_policies_rag --testset eval/testsets/retail_policies_rag.csv
+python -m app.cli eval-ragas --kb retail_supply_chain_kg --testset my_graph_questions.csv
+python -m app.cli eval-ragas --kb my_kb --testset my_questions.csv --metrics faithfulness,context_recall --limit 20
+python -m app.cli eval-ragas --kb my_kb --testset my_questions.csv --min-score 0.7   # exit code 1 below 0.7 (CI)
+```
+
+`eval-rag`, `eval-graph`, and `eval-kb` remain accepted aliases. Graph result rows are passed to RAGAS as the
+retrieved contexts, while the report retains the generated Cypher and returned rows for debugging.
+
+- **Test set:** CSV with `id,question,reference` (see `eval/testsets/TEMPLATE.csv`), or JSONL / JSON with the same
+  keys. Write the reference as a full sentence, the way the documents state it. Without a reference only the first
+  three metrics run. Samples: `eval/testsets/retail_policies_rag.csv`, `hospital_rag.csv`.
+- **Judge:** `RAGAS_JUDGE_MODEL` / `RAGAS_JUDGE_EMBED_MODEL` (or `--judge-model`) choose a different Azure deployment
+  or Ollama model. A stronger judge than the model under test gives more reliable scores. Each question costs
+  roughly 10-20 judge calls.
+- **Docker:** `docker compose exec backend sh -c "uv sync && python -m app.cli eval-ragas
+  --kb retail_policies_rag --testset eval/testsets/retail_policies_rag.csv"`; reports appear in `backend/reports/ragas`.
+- **Results are saved three ways:**
+  1. a folder per run, `backend/reports/ragas/<kb>_<time>/` (`RAGAS_REPORT_DIR`): `results.csv` (opens in Excel:
+     each question, the answer, sources, every score and why a score is missing), `results.jsonl` (also the full
+     passages) and `summary.json` (averages, models and settings, change since the previous run);
+  2. Postgres: `rag_eval_runs` (one row per run, average scores) and `rag_eval_results` (one row per question);
+  3. Langfuse, when tracing is on: each answer is a "RAG Evaluation" trace with `ragas_<metric>` scores.
+
+```sql
+SELECT id, started_at, metrics FROM rag_eval_runs WHERE kb_name = 'retail_policies_rag' ORDER BY started_at;
+```
+
+## Chat: conversations, guardrails and prompts
+
+- **Saved conversations**: every chat is saved; each user keeps the last 10 (older ones are removed when a new one
+  starts). The Chat screen lists them on the left; follow-up questions use the saved turns as history. Tables
+  `chat_conversations` and `chat_messages`; a conversation is hidden when the user loses access to its knowledge base.
+- **Guardrails** (`app/guardrails.py`, web chat and MCP tools): questions that try prompt injection, ask to change
+  data, ask for system credentials or are clearly harmful are answered with a refusal and never reach the model.
+  Values of PII whose NIST impact is at or above `GUARDRAIL_MASK_PII` (default high: government IDs, financial
+  accounts, health, biometrics) are masked in query results before the model sees them, and in answers and
+  document passages by pattern. `GUARDRAIL_MIN_RELEVANCE` stops document answers built on unrelated passages. The
+  UI shows which guardrail acted under each answer.
+- **Prompts** (`app/chat.py`): the Cypher planner declines questions the graph can't answer instead of guessing;
+  answers start with the direct answer, keep values exact, use lists for many items and never reveal masked values;
+  document answers cite each fact and say plainly when the documents don't contain the answer.
+
+## PII classification (NIST)
+
+`app/nist_pii.py` follows NIST SP 800-122: each PII column is a direct identifier or linked/linkable information
+and gets a confidentiality impact level (Low / Moderate / High) from its field sensitivity, what it is stored with
+(a name next to a bank account is more sensitive; a date of birth with no identifier in the same records is less),
+and how many records hold it. Each finding lists the factors and the NIST Privacy Framework safeguards for its level
+(ID.IM-P inventory, PR.AC-P access control, PR.DS-P data security, CT.DP-P disassociated processing). Shown on the
+Review screen and stored in `kb_pii_fields` (`nist_identifier`, `nist_impact`, `nist_factors`).
+
+## Sessions
+
+Sessions are server-side (see How it works). The **Sessions** page lists where the user is signed in (browser, IP,
+last activity, end time) and signs out one or all other sessions. Two minutes before an idle timeout the app asks
+"Stay signed in?"; an ended session lands on the sign-in page with a notice. `SESSION_IDLE_MINUTES`,
+`SESSION_MAX_HOURS`.
+
+## Knowledge base names
+
+3-63 characters, letters (upper or lower case), digits and underscores, starting with a letter. Names are unique
+regardless of case (`Sales_KG` and `sales_kg` can't both exist; Neo4j database names are case-insensitive).
+
+## Langfuse tracing
+
+Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` (see `.env.example`) for the backend and
+the MCP server. Each user operation becomes one trace, named after the operation (`Chat`, `RAG Chat`,
+`KG Extraction`, `KG Build`, `Embedding`, `Add Data`, `MCP <tool>`), with the user, a session (web session, job or
+Keycloak session) and every model call, embedding, retrieval and Neo4j query inside it, including token usage.
+Spans are sent in the background every `LANGFUSE_FLUSH_INTERVAL` seconds, so a trace appears a few seconds after the
+operation ends. `app/observability.py` explains the design rules (private OpenTelemetry provider, trace identity
+set only by the root, no flush inside requests, trimmed payloads); `tests/test_observability.py` checks them
+against a stand-in Langfuse endpoint.
+
 ## SAP and ServiceNow connectors
 
 *Workspace -> Connected systems -> Manage connections* saves a connection (base URL, user + password or OAuth client
@@ -127,7 +234,7 @@ records changed since a date (SAP datasets need their changed field, e.g. `LastC
 ## Tests
 
 ```bash
-docker compose exec backend pytest -q                    # 202 tests (start the keycloak profile for the Keycloak ones)
+docker compose exec backend pytest -q                    # ~310 tests (start the keycloak profile for the Keycloak ones)
 docker compose exec backend pytest -m llm -s             # real-LLM quality on both datasets, ~1 h on CPU
 .venv/bin/python -m pytest e2e -q                        # browser tests of every screen (needs seed-demo-data)
 ```

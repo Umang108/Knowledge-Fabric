@@ -1,7 +1,7 @@
-"""The agent end to end: Keycloak sign-in (device code / password) -> LangGraph agent -> Graphbase MCP server.
+"""The agent end to end: Keycloak sign-in (device code / password) -> LangGraph agent -> MCP server.
 
-Uses the same running stand-in Keycloak, real MCP server, Postgres and Chroma as test_mcp_server.py. The LLM is
-a scripted tool-calling model so the test checks the plumbing (tokens, refresh, per-user access, tool calls)
+Uses the same running stand-in Keycloak, real MCP server, Postgres and TurboQuant store as test_mcp_server.py.
+The LLM is a scripted tool-calling model so the test checks the plumbing (tokens, refresh, per-user access, tool calls)
 without depending on a hosted model.
 """
 

@@ -1,5 +1,7 @@
 """Knowledge-base catalog and access control. Every API route goes through require_access()."""
 
+import re
+
 from fastapi import HTTPException
 
 from app.auth import CurrentUser
@@ -54,10 +56,30 @@ def list_for_user(user_id: str) -> list[dict]:
         ).fetchall()
 
 
+NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{2,62}$")
+NAME_RULE = (
+    "Name must be 3-63 characters: letters (upper or lower case), digits and underscores, starting with a letter"
+)
+
+
+def validate_name(kb_name: str) -> None:
+    if not NAME_RE.fullmatch(kb_name or ""):
+        raise HTTPException(422, NAME_RULE)
+    with get_conn() as conn:
+        clash = conn.execute(
+            "SELECT kb_name FROM kb_catalog WHERE lower(kb_name) = lower(%s)", (kb_name,)
+        ).fetchone()
+    if clash:
+        raise HTTPException(
+            409, f"A knowledge base named '{clash['kb_name']}' already exists (names are not case-sensitive)"
+        )
+
+
 def create(user: CurrentUser, kb_name: str, kb_type: str, domain: str, sub_domain: str, storage_ref: str) -> dict:
     """The creator becomes the owner: one row in kb_catalog, knowledge_bases and kb_access."""
     import psycopg
 
+    validate_name(kb_name)
     status = "extracting" if kb_type == "graph" else "ingesting"
     try:
         with get_conn() as conn:
@@ -78,11 +100,11 @@ def create(user: CurrentUser, kb_name: str, kb_type: str, domain: str, sub_domai
                 (kb_name, user.user_id, user.user_id),
             )
     except psycopg.errors.UniqueViolation:
-        raise HTTPException(409, f"A knowledge base named '{kb_name}' already exists") from None
-    except psycopg.errors.CheckViolation:
         raise HTTPException(
-            422, "Name must be 3-63 characters: lowercase letters, digits and underscores, " "starting with a letter"
+            409, f"A knowledge base named '{kb_name}' already exists (names are not case-sensitive)"
         ) from None
+    except psycopg.errors.CheckViolation:
+        raise HTTPException(422, NAME_RULE) from None
     return get_catalog(kb_name)
 
 

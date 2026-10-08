@@ -1,0 +1,6 @@
+python -m app.cli eval-ragas --kb finance_ledger_kg --testset eval\testsets\finance_ledger_graph.csv
+
+
+
+python -m app.cli eval-ragas --kb returns_policy_rag --testset eval\testsets\retail_policies_rag.csv
+
