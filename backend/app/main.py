@@ -18,7 +18,10 @@ from app.db import close_pool, get_conn, open_pool, run_migrations
 from app.graphstore import close_driver
 from app.observability import flush_langfuse
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.basicConfig(
+    level=getattr(logging, get_settings().log_level.upper(), logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 
 def _warn_empty_rag() -> None:
@@ -36,7 +39,7 @@ def _warn_empty_rag() -> None:
             "%d document knowledge base(s) have no chunks in the TurboQuant store (%s). "
             "Re-upload their documents to ingest them into TurboQuant.",
             len(rows),
-            ", ".join(r["kb_name"] for r in rows[:10]),
+            ", ".join(r["kb_name"] for r in rows[: get_settings().startup_warning_limit]),
         )
 
 
@@ -52,9 +55,9 @@ async def lifespan(app: FastAPI):
     close_pool()
 
 
-app = FastAPI(title="TCS Knowledge Fabric API", lifespan=lifespan)
+app = FastAPI(title=get_settings().app_name, lifespan=lifespan)
 
-CSRF_HEADER = "X-Requested-With"
+CSRF_HEADER = get_settings().csrf_header
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 # The UI reaches the API through the Vite proxy (same origin), so no CORS is needed. Only list origins in
@@ -78,7 +81,7 @@ async def csrf_protection(request: Request, call_next):
     if (
         request.method not in SAFE_METHODS
         and request.url.path.startswith("/api/")
-        and request.headers.get(CSRF_HEADER) != "graphbase"
+        and request.headers.get(CSRF_HEADER) != get_settings().csrf_value
     ):
         return JSONResponse({"detail": "Missing CSRF header"}, status_code=403)
     return await call_next(request)
@@ -91,7 +94,7 @@ app.include_router(kbs_api.router)
 
 
 def _check_postgres(s) -> str:
-    with psycopg.connect(s.postgres_dsn, connect_timeout=3) as conn:
+    with psycopg.connect(s.postgres_dsn, connect_timeout=s.postgres_connect_timeout_seconds) as conn:
         return conn.execute("SELECT version()").fetchone()[0].split(",")[0]
 
 
@@ -108,7 +111,7 @@ def _check_vector_store(s) -> str:
 
 
 def _check_ollama(s) -> str:
-    tags = httpx.get(f"{s.ollama_base_url}/api/tags", timeout=3).json()
+    tags = httpx.get(f"{s.ollama_base_url}/api/tags", timeout=s.health_check_timeout_seconds).json()
     models = {m["name"] for m in tags.get("models", [])}
     missing = [
         m for m in (s.ollama_chat_model, s.ollama_embed_model) if m not in models and f"{m}:latest" not in models

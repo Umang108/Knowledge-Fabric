@@ -33,10 +33,6 @@ from app.db import get_conn
 
 log = logging.getLogger(__name__)
 
-_LOCK_NS = 72_011_002  # advisory-lock namespace (db.py uses 72_011_001 for migrations)
-SUFFIX = ".tvim"
-
-
 class VectorStoreError(RuntimeError):
     """Raised for problems the caller should report as they are (wrong embedding model, damaged file)."""
 
@@ -56,7 +52,7 @@ def folder() -> Path:
 
 
 def index_path(kb_name: str) -> Path:
-    return folder() / f"{kb_name}{SUFFIX}"
+    return folder() / f"{kb_name}{get_settings().vector_index_suffix}"
 
 
 def _bits() -> int:
@@ -166,7 +162,10 @@ def _forget(kb_name: str) -> None:
 
 # ------------------------------------------------------------------ writes
 def _lock(conn, kb_name: str) -> None:
-    conn.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", (_LOCK_NS, kb_name))
+    conn.execute(
+        "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
+        (get_settings().vector_lock_namespace, kb_name),
+    )
 
 
 def replace_source(kb_name: str, source: str, chunks: list[dict], vectors) -> int:
@@ -277,5 +276,5 @@ def status() -> str:
     probe = path / f".probe.{os.getpid()}.{uuid.uuid4().hex[:6]}"
     probe.write_bytes(b"")
     probe.unlink()
-    n = sum(1 for _ in path.glob(f"*{SUFFIX}"))
+    n = sum(1 for _ in path.glob(f"*{get_settings().vector_index_suffix}"))
     return f"TurboQuant (turbovec {library_version()}), {_bits()}-bit, {path.resolve()}: {n} index file(s)"

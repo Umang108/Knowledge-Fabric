@@ -12,6 +12,15 @@ docker compose up -d --build
 docker compose exec backend python -m app.cli seed-demo-data   # optional: the mockup knowledge bases
 ```
 
+## Configuration
+
+All operational settings are loaded by the typed `Settings` model in
+[`backend/app/config.py`](backend/app/config.py). Set them in the repository root
+`.env`; [`.env.example`](.env.example) is the complete reference grouped by
+application, databases, TurboQuant, LLMs, security, connectors, and evaluation.
+Changing these values does not require source-code edits. Existing defaults are
+kept for local development, so older `.env` files remain compatible.
+
 | Service  | URL |
 |----------|-----|
 | App      | http://localhost:5173 (demo users below) |

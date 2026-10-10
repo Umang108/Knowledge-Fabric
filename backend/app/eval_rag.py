@@ -55,7 +55,7 @@ METRICS: dict[str, tuple[str, bool]] = {
 }
 QUESTION_KEYS = ("question", "user_input", "q", "query")
 REFERENCE_KEYS = ("reference", "ground_truth", "expected_answer", "reference_answer", "answer")
-METRIC_TIMEOUT = 300  # seconds per metric per question
+METRIC_TIMEOUT = get_settings().ragas_metric_timeout_seconds
 
 
 class EvalError(RuntimeError):
@@ -159,7 +159,12 @@ def build_metrics(names: list[str], model: str, embed_model: str) -> dict:
     """{metric name: {"plain": metric, "with_reference": metric or None}}"""
     _, llm_factory, embedding_factory, C = _ragas()
     client = _judge_client()
-    llm = llm_factory(model, provider="openai", client=client, max_tokens=4096)
+    llm = llm_factory(
+        model,
+        provider="openai",
+        client=client,
+        max_tokens=get_settings().ragas_judge_max_tokens,
+    )
     out = {}
     for name in names:
         if name == "faithfulness":
@@ -206,9 +211,16 @@ def _check_kb(kb_name: str) -> dict:
 
 
 def _graph_context(result: dict) -> list[str]:
-    """Turn the graph result rows into RAGAS contexts without exposing implementation details to the judge."""
+    """Pair graph rows with the query that explains what each returned value represents."""
     rows = result.get("rows") or []
-    return [json.dumps(row, default=str, sort_keys=True) for row in rows]
+    if not rows:
+        return []
+    query = result.get("cypher") or ""
+    evidence = (
+        f"Graph query:\n{query}\n\n"
+        f"Returned rows:\n{json.dumps(rows, default=str, sort_keys=True)}"
+    )
+    return [evidence]
 
 
 def answer(kb: dict, item: dict, user: str, session: str) -> dict:
@@ -310,7 +322,10 @@ async def _score_all(rows: list[dict], metrics: dict, concurrency: int, progress
         else:
             async with sem:
                 try:
-                    result = await asyncio.wait_for(variants[variant].ascore(**kwargs), METRIC_TIMEOUT)
+                    result = await asyncio.wait_for(
+                        variants[variant].ascore(**kwargs),
+                        METRIC_TIMEOUT,
+                    )
                     row["scores"][name] = _number(getattr(result, "value", result))
                     if row["scores"][name] is None:
                         row["errors"][name] = f"no score returned ({getattr(result, 'reason', '') or 'NaN'})"
@@ -470,7 +485,7 @@ def run(
     judge_model: str | None = None,
     judge_embed_model: str | None = None,
     limit: int | None = None,
-    concurrency: int = 4,
+    concurrency: int | None = None,
     user: str = "ragas-eval",
     echo=print,
 ) -> dict:
@@ -482,6 +497,7 @@ def run(
     ragas = _ragas()[0]
     kb = _check_kb(kb_name)
     kb_name = kb["kb_name"]
+    concurrency = concurrency or get_settings().ragas_default_concurrency
     items = load_testset(testset_path)[: limit or None]
     testset = Path(testset_path).name
     model, embed_model = judge_names(judge_model, judge_embed_model)
@@ -526,7 +542,7 @@ def run(
             "embedding_model": s.azure_openai_embed_deployment if s.llm_provider == "azure" else s.ollama_embed_model,
             "judge_model": model,
             "judge_embedding_model": embed_model,
-            "top_k": 6,
+            "top_k": s.rag_retrieval_top_k,
             "retrieval_backend": (
                 f"TurboQuant {s.turboquant_bits}-bit" if kb["kb_type"] == "rag" else "Neo4j read-only graph"
             ),
@@ -561,15 +577,12 @@ def run(
 
 
 def _print_summary(summary: dict, echo) -> None:
-    change = (summary.get("previous_run") or {}).get("change", {})
     echo("")
     echo(f"RAGAS results for {summary['knowledge_base']}")
-    echo(f"  {'metric':<22}{'score':>7}{'scored':>9}  change since last run")
+    echo(f"  {'metric':<22}{'score':>7}")
     for name, m in summary["metrics"].items():
         score = "-" if m["mean"] is None else f"{m['mean']:.3f}"
-        delta = f"{change[name]:+.3f}" if name in change else ""
-        extra = ", ".join(f"{m[k]} {k}" for k in ("errors", "skipped") if m[k])
-        echo(f"  {name:<22}{score:>7}{m['scored']:>6}/{summary['questions']:<3} {delta:>8}  {extra}")
+        echo(f"  {name:<22}{score:>7}")
     if summary["run_id"]:
         echo(f"Saved to {summary['report_dir']} and Postgres (rag_eval_runs id {summary['run_id']}).")
     else:

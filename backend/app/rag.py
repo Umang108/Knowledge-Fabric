@@ -17,7 +17,6 @@ from app.observability import observe_span
 log = logging.getLogger(__name__)
 
 SUPPORTED = (".pdf", ".docx", ".txt", ".md")
-CHUNK_SIZE, CHUNK_OVERLAP = 900, 150
 
 
 class DocumentError(ValueError):
@@ -93,8 +92,11 @@ def extract_text(path: Path, filename: str) -> list[tuple[int | None, str]]:
 
 
 def chunk(pages: list[tuple[int | None, str]]) -> list[dict]:
+    settings = get_settings()
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, separators=["\n\n", "\n", ". ", " ", ""]
+        chunk_size=settings.rag_chunk_size,
+        chunk_overlap=settings.rag_chunk_overlap,
+        separators=["\n\n", "\n", ". ", " ", ""],
     )
     out = []
     for page, text in pages:
@@ -169,7 +171,7 @@ def drop_index(kb_name: str) -> None:
 def store_chunks(kb_name: str, filename: str, chunks: list[dict], run_id: int | None = None, progress=None) -> int:
     """Embed the chunks, then replace any earlier version of this document with them in one step."""
     emb = get_embeddings()
-    batch = 32
+    batch = get_settings().rag_embedding_batch_size
     vectors: list[list[float]] = []
     for i in range(0, len(chunks), batch):
         part = chunks[i : i + batch]
@@ -181,7 +183,9 @@ def store_chunks(kb_name: str, filename: str, chunks: list[dict], run_id: int | 
     return _store("saving chunks", lambda: vectorstore.replace_source(kb_name, filename, rows, vectors))
 
 
-def retrieve(kb_name: str, question: str, k: int = 6) -> list[dict]:
+def retrieve(kb_name: str, question: str, k: int | None = None) -> list[dict]:
+    if k is None:
+        k = get_settings().rag_retrieval_top_k
     with observe_span("TurboQuant Retrieval", {"knowledge_base": kb_name, "top_k": k}):
         if _store("opening the index", lambda: vectorstore.count(kb_name)) == 0:
             return []

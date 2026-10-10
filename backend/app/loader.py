@@ -16,11 +16,9 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 from app import graph_schema as gs
+from app.config import get_settings
 from app.graphstore import GraphStore
 from app.tabular import Sheet, coerce, is_blank, match_columns, norm_key
-
-MAX_REPORTED_REJECTIONS = 5000
-
 
 class LoadError(ValueError):
     pass
@@ -123,7 +121,7 @@ def plan_load(
 
     rejected: dict[int, str] = {}
     available: dict[str, set] = {}
-    for _ in range(10):  # fixpoint over cascading rejections
+    for _ in range(get_settings().extraction_fixpoint_max_iterations):  # fixpoint over cascading rejections
         available = {label: set(existing_keys.get(label, {})) for label in labels}
         for i, (m, row) in enumerate(work):
             if i in rejected:
@@ -146,7 +144,7 @@ def plan_load(
 
     for i, (m, row) in enumerate(work):
         if i in rejected:
-            if len(plan.rejected) < MAX_REPORTED_REJECTIONS:
+            if len(plan.rejected) < get_settings().loader_max_reported_rejections:
                 plan.rejected.append({"sheet": m.file_sheet.name, "row": row["_row"], "reason": rejected[i]})
             plan.rejected_by_reason[rejected[i].split(":")[0]] += 1
     plan.rows_loaded = plan.rows_total - len(rejected)

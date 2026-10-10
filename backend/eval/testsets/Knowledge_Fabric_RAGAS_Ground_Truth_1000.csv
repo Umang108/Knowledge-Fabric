@@ -1,0 +1,1001 @@
+id,question,reference
+GT0001,What is the name of supplier SUP001?,BluePeak Distributors 001
+GT0002,What tier is supplier SUP001 assigned to?,Gold
+GT0003,What is the name of supplier SUP002?,Cedar Supply Co 002
+GT0004,What tier is supplier SUP002 assigned to?,Silver
+GT0005,What is the name of supplier SUP003?,Delta Enterprises 003
+GT0006,What tier is supplier SUP003 assigned to?,Bronze
+GT0007,What is the name of supplier SUP004?,Evergreen Industries 004
+GT0008,What tier is supplier SUP004 assigned to?,Gold
+GT0009,What is the name of supplier SUP005?,Aster Distributors 005
+GT0010,What tier is supplier SUP005 assigned to?,Silver
+GT0011,What is the name of supplier SUP006?,BluePeak Supply Co 006
+GT0012,What tier is supplier SUP006 assigned to?,Bronze
+GT0013,What is the name of supplier SUP007?,Cedar Enterprises 007
+GT0014,What tier is supplier SUP007 assigned to?,Gold
+GT0015,What is the name of supplier SUP008?,Delta Industries 008
+GT0016,What tier is supplier SUP008 assigned to?,Silver
+GT0017,What is the name of supplier SUP009?,Evergreen Distributors 009
+GT0018,What tier is supplier SUP009 assigned to?,Bronze
+GT0019,What is the name of supplier SUP010?,Aster Supply Co 010
+GT0020,What tier is supplier SUP010 assigned to?,Gold
+GT0021,What is the name of supplier SUP011?,BluePeak Enterprises 011
+GT0022,What tier is supplier SUP011 assigned to?,Silver
+GT0023,What is the name of supplier SUP012?,Cedar Industries 012
+GT0024,What tier is supplier SUP012 assigned to?,Bronze
+GT0025,What is the name of supplier SUP013?,Delta Distributors 013
+GT0026,What tier is supplier SUP013 assigned to?,Gold
+GT0027,What is the name of supplier SUP014?,Evergreen Supply Co 014
+GT0028,What tier is supplier SUP014 assigned to?,Silver
+GT0029,What is the name of supplier SUP015?,Aster Enterprises 015
+GT0030,What tier is supplier SUP015 assigned to?,Bronze
+GT0031,What is the name of supplier SUP016?,BluePeak Industries 016
+GT0032,What tier is supplier SUP016 assigned to?,Gold
+GT0033,What is the name of supplier SUP017?,Cedar Distributors 017
+GT0034,What tier is supplier SUP017 assigned to?,Silver
+GT0035,What is the name of supplier SUP018?,Delta Supply Co 018
+GT0036,What tier is supplier SUP018 assigned to?,Bronze
+GT0037,What is the name of supplier SUP019?,Evergreen Enterprises 019
+GT0038,What tier is supplier SUP019 assigned to?,Gold
+GT0039,What is the name of supplier SUP020?,Aster Industries 020
+GT0040,What tier is supplier SUP020 assigned to?,Silver
+GT0041,What is the name of supplier SUP021?,BluePeak Distributors 021
+GT0042,What tier is supplier SUP021 assigned to?,Bronze
+GT0043,What is the name of supplier SUP022?,Cedar Supply Co 022
+GT0044,What tier is supplier SUP022 assigned to?,Gold
+GT0045,What is the name of supplier SUP023?,Delta Enterprises 023
+GT0046,What tier is supplier SUP023 assigned to?,Silver
+GT0047,What is the name of supplier SUP024?,Evergreen Industries 024
+GT0048,What tier is supplier SUP024 assigned to?,Bronze
+GT0049,What is the name of supplier SUP025?,Aster Distributors 025
+GT0050,What tier is supplier SUP025 assigned to?,Gold
+GT0051,What is the name of supplier SUP026?,BluePeak Supply Co 026
+GT0052,What tier is supplier SUP026 assigned to?,Silver
+GT0053,What is the name of supplier SUP027?,Cedar Enterprises 027
+GT0054,What tier is supplier SUP027 assigned to?,Bronze
+GT0055,What is the name of supplier SUP028?,Delta Industries 028
+GT0056,What tier is supplier SUP028 assigned to?,Gold
+GT0057,What is the name of supplier SUP029?,Evergreen Distributors 029
+GT0058,What tier is supplier SUP029 assigned to?,Silver
+GT0059,What is the name of supplier SUP030?,Aster Supply Co 030
+GT0060,What tier is supplier SUP030 assigned to?,Bronze
+GT0061,What is the name of supplier SUP031?,BluePeak Enterprises 031
+GT0062,What tier is supplier SUP031 assigned to?,Gold
+GT0063,What is the name of supplier SUP032?,Cedar Industries 032
+GT0064,What tier is supplier SUP032 assigned to?,Silver
+GT0065,What is the name of supplier SUP033?,Delta Distributors 033
+GT0066,What tier is supplier SUP033 assigned to?,Bronze
+GT0067,What is the name of supplier SUP034?,Evergreen Supply Co 034
+GT0068,What tier is supplier SUP034 assigned to?,Gold
+GT0069,What is the name of supplier SUP035?,Aster Enterprises 035
+GT0070,What tier is supplier SUP035 assigned to?,Silver
+GT0071,What is the name of supplier SUP036?,BluePeak Industries 036
+GT0072,What tier is supplier SUP036 assigned to?,Bronze
+GT0073,What is the name of supplier SUP037?,Cedar Distributors 037
+GT0074,What tier is supplier SUP037 assigned to?,Gold
+GT0075,What is the name of supplier SUP038?,Delta Supply Co 038
+GT0076,What tier is supplier SUP038 assigned to?,Silver
+GT0077,What is the name of supplier SUP039?,Evergreen Enterprises 039
+GT0078,What tier is supplier SUP039 assigned to?,Bronze
+GT0079,What is the name of supplier SUP040?,Aster Industries 040
+GT0080,What tier is supplier SUP040 assigned to?,Gold
+GT0081,What category does product PRD001 belong to?,Electronics
+GT0082,What is the unit price of product PRD001 in INR?,INR 597
+GT0083,Which supplier supplies product PRD001?,SUP007 (Cedar Enterprises 007) supplies PRD001.
+GT0084,What category does product PRD002 belong to?,Home Appliances
+GT0085,What is the unit price of product PRD002 in INR?,INR 944
+GT0086,Which supplier supplies product PRD002?,SUP014 (Evergreen Supply Co 014) supplies PRD002.
+GT0087,What category does product PRD003 belong to?,Office Supplies
+GT0088,What is the unit price of product PRD003 in INR?,INR 1291
+GT0089,Which supplier supplies product PRD003?,SUP021 (BluePeak Distributors 021) supplies PRD003.
+GT0090,What category does product PRD004 belong to?,Furniture
+GT0091,What is the unit price of product PRD004 in INR?,INR 1638
+GT0092,Which supplier supplies product PRD004?,SUP028 (Delta Industries 028) supplies PRD004.
+GT0093,What category does product PRD005 belong to?,Packaging
+GT0094,What is the unit price of product PRD005 in INR?,INR 1985
+GT0095,Which supplier supplies product PRD005?,SUP035 (Aster Enterprises 035) supplies PRD005.
+GT0096,What category does product PRD006 belong to?,Electronics
+GT0097,What is the unit price of product PRD006 in INR?,INR 2332
+GT0098,Which supplier supplies product PRD006?,SUP002 (Cedar Supply Co 002) supplies PRD006.
+GT0099,What category does product PRD007 belong to?,Home Appliances
+GT0100,What is the unit price of product PRD007 in INR?,INR 2679
+GT0101,Which supplier supplies product PRD007?,SUP009 (Evergreen Distributors 009) supplies PRD007.
+GT0102,What category does product PRD008 belong to?,Office Supplies
+GT0103,What is the unit price of product PRD008 in INR?,INR 3026
+GT0104,Which supplier supplies product PRD008?,SUP016 (BluePeak Industries 016) supplies PRD008.
+GT0105,What category does product PRD009 belong to?,Furniture
+GT0106,What is the unit price of product PRD009 in INR?,INR 3373
+GT0107,Which supplier supplies product PRD009?,SUP023 (Delta Enterprises 023) supplies PRD009.
+GT0108,What category does product PRD010 belong to?,Packaging
+GT0109,What is the unit price of product PRD010 in INR?,INR 3720
+GT0110,Which supplier supplies product PRD010?,SUP030 (Aster Supply Co 030) supplies PRD010.
+GT0111,What category does product PRD011 belong to?,Electronics
+GT0112,What is the unit price of product PRD011 in INR?,INR 4067
+GT0113,Which supplier supplies product PRD011?,SUP037 (Cedar Distributors 037) supplies PRD011.
+GT0114,What category does product PRD012 belong to?,Home Appliances
+GT0115,What is the unit price of product PRD012 in INR?,INR 4414
+GT0116,Which supplier supplies product PRD012?,SUP004 (Evergreen Industries 004) supplies PRD012.
+GT0117,What category does product PRD013 belong to?,Office Supplies
+GT0118,What is the unit price of product PRD013 in INR?,INR 4761
+GT0119,Which supplier supplies product PRD013?,SUP011 (BluePeak Enterprises 011) supplies PRD013.
+GT0120,What category does product PRD014 belong to?,Furniture
+GT0121,What is the unit price of product PRD014 in INR?,INR 5108
+GT0122,Which supplier supplies product PRD014?,SUP018 (Delta Supply Co 018) supplies PRD014.
+GT0123,What category does product PRD015 belong to?,Packaging
+GT0124,What is the unit price of product PRD015 in INR?,INR 5455
+GT0125,Which supplier supplies product PRD015?,SUP025 (Aster Distributors 025) supplies PRD015.
+GT0126,What category does product PRD016 belong to?,Electronics
+GT0127,What is the unit price of product PRD016 in INR?,INR 5802
+GT0128,Which supplier supplies product PRD016?,SUP032 (Cedar Industries 032) supplies PRD016.
+GT0129,What category does product PRD017 belong to?,Home Appliances
+GT0130,What is the unit price of product PRD017 in INR?,INR 6149
+GT0131,Which supplier supplies product PRD017?,SUP039 (Evergreen Enterprises 039) supplies PRD017.
+GT0132,What category does product PRD018 belong to?,Office Supplies
+GT0133,What is the unit price of product PRD018 in INR?,INR 6496
+GT0134,Which supplier supplies product PRD018?,SUP006 (BluePeak Supply Co 006) supplies PRD018.
+GT0135,What category does product PRD019 belong to?,Furniture
+GT0136,What is the unit price of product PRD019 in INR?,INR 6843
+GT0137,Which supplier supplies product PRD019?,SUP013 (Delta Distributors 013) supplies PRD019.
+GT0138,What category does product PRD020 belong to?,Packaging
+GT0139,What is the unit price of product PRD020 in INR?,INR 7190
+GT0140,Which supplier supplies product PRD020?,SUP020 (Aster Industries 020) supplies PRD020.
+GT0141,What category does product PRD021 belong to?,Electronics
+GT0142,What is the unit price of product PRD021 in INR?,INR 7537
+GT0143,Which supplier supplies product PRD021?,SUP027 (Cedar Enterprises 027) supplies PRD021.
+GT0144,What category does product PRD022 belong to?,Home Appliances
+GT0145,What is the unit price of product PRD022 in INR?,INR 7884
+GT0146,Which supplier supplies product PRD022?,SUP034 (Evergreen Supply Co 034) supplies PRD022.
+GT0147,What category does product PRD023 belong to?,Office Supplies
+GT0148,What is the unit price of product PRD023 in INR?,INR 8231
+GT0149,Which supplier supplies product PRD023?,SUP001 (BluePeak Distributors 001) supplies PRD023.
+GT0150,What category does product PRD024 belong to?,Furniture
+GT0151,What is the unit price of product PRD024 in INR?,INR 8578
+GT0152,Which supplier supplies product PRD024?,SUP008 (Delta Industries 008) supplies PRD024.
+GT0153,What category does product PRD025 belong to?,Packaging
+GT0154,What is the unit price of product PRD025 in INR?,INR 8925
+GT0155,Which supplier supplies product PRD025?,SUP015 (Aster Enterprises 015) supplies PRD025.
+GT0156,What category does product PRD026 belong to?,Electronics
+GT0157,What is the unit price of product PRD026 in INR?,INR 9272
+GT0158,Which supplier supplies product PRD026?,SUP022 (Cedar Supply Co 022) supplies PRD026.
+GT0159,What category does product PRD027 belong to?,Home Appliances
+GT0160,What is the unit price of product PRD027 in INR?,INR 9619
+GT0161,Which supplier supplies product PRD027?,SUP029 (Evergreen Distributors 029) supplies PRD027.
+GT0162,What category does product PRD028 belong to?,Office Supplies
+GT0163,What is the unit price of product PRD028 in INR?,INR 9966
+GT0164,Which supplier supplies product PRD028?,SUP036 (BluePeak Industries 036) supplies PRD028.
+GT0165,What category does product PRD029 belong to?,Furniture
+GT0166,What is the unit price of product PRD029 in INR?,INR 10313
+GT0167,Which supplier supplies product PRD029?,SUP003 (Delta Enterprises 003) supplies PRD029.
+GT0168,What category does product PRD030 belong to?,Packaging
+GT0169,What is the unit price of product PRD030 in INR?,INR 10660
+GT0170,Which supplier supplies product PRD030?,SUP010 (Aster Supply Co 010) supplies PRD030.
+GT0171,What category does product PRD031 belong to?,Electronics
+GT0172,What is the unit price of product PRD031 in INR?,INR 11007
+GT0173,Which supplier supplies product PRD031?,SUP017 (Cedar Distributors 017) supplies PRD031.
+GT0174,What category does product PRD032 belong to?,Home Appliances
+GT0175,What is the unit price of product PRD032 in INR?,INR 11354
+GT0176,Which supplier supplies product PRD032?,SUP024 (Evergreen Industries 024) supplies PRD032.
+GT0177,What category does product PRD033 belong to?,Office Supplies
+GT0178,What is the unit price of product PRD033 in INR?,INR 11701
+GT0179,Which supplier supplies product PRD033?,SUP031 (BluePeak Enterprises 031) supplies PRD033.
+GT0180,What category does product PRD034 belong to?,Furniture
+GT0181,What is the unit price of product PRD034 in INR?,INR 12048
+GT0182,Which supplier supplies product PRD034?,SUP038 (Delta Supply Co 038) supplies PRD034.
+GT0183,What category does product PRD035 belong to?,Packaging
+GT0184,What is the unit price of product PRD035 in INR?,INR 12395
+GT0185,Which supplier supplies product PRD035?,SUP005 (Aster Distributors 005) supplies PRD035.
+GT0186,What category does product PRD036 belong to?,Electronics
+GT0187,What is the unit price of product PRD036 in INR?,INR 12742
+GT0188,Which supplier supplies product PRD036?,SUP012 (Cedar Industries 012) supplies PRD036.
+GT0189,What category does product PRD037 belong to?,Home Appliances
+GT0190,What is the unit price of product PRD037 in INR?,INR 13089
+GT0191,Which supplier supplies product PRD037?,SUP019 (Evergreen Enterprises 019) supplies PRD037.
+GT0192,What category does product PRD038 belong to?,Office Supplies
+GT0193,What is the unit price of product PRD038 in INR?,INR 13436
+GT0194,Which supplier supplies product PRD038?,SUP026 (BluePeak Supply Co 026) supplies PRD038.
+GT0195,What category does product PRD039 belong to?,Furniture
+GT0196,What is the unit price of product PRD039 in INR?,INR 13783
+GT0197,Which supplier supplies product PRD039?,SUP033 (Delta Distributors 033) supplies PRD039.
+GT0198,What category does product PRD040 belong to?,Packaging
+GT0199,What is the unit price of product PRD040 in INR?,INR 14130
+GT0200,Which supplier supplies product PRD040?,SUP040 (Aster Industries 040) supplies PRD040.
+GT0201,What category does product PRD041 belong to?,Electronics
+GT0202,What is the unit price of product PRD041 in INR?,INR 14477
+GT0203,Which supplier supplies product PRD041?,SUP007 (Cedar Enterprises 007) supplies PRD041.
+GT0204,What category does product PRD042 belong to?,Home Appliances
+GT0205,What is the unit price of product PRD042 in INR?,INR 14824
+GT0206,Which supplier supplies product PRD042?,SUP014 (Evergreen Supply Co 014) supplies PRD042.
+GT0207,What category does product PRD043 belong to?,Office Supplies
+GT0208,What is the unit price of product PRD043 in INR?,INR 15171
+GT0209,Which supplier supplies product PRD043?,SUP021 (BluePeak Distributors 021) supplies PRD043.
+GT0210,What category does product PRD044 belong to?,Furniture
+GT0211,What is the unit price of product PRD044 in INR?,INR 15518
+GT0212,Which supplier supplies product PRD044?,SUP028 (Delta Industries 028) supplies PRD044.
+GT0213,What category does product PRD045 belong to?,Packaging
+GT0214,What is the unit price of product PRD045 in INR?,INR 15865
+GT0215,Which supplier supplies product PRD045?,SUP035 (Aster Enterprises 035) supplies PRD045.
+GT0216,What category does product PRD046 belong to?,Electronics
+GT0217,What is the unit price of product PRD046 in INR?,INR 16212
+GT0218,Which supplier supplies product PRD046?,SUP002 (Cedar Supply Co 002) supplies PRD046.
+GT0219,What category does product PRD047 belong to?,Home Appliances
+GT0220,What is the unit price of product PRD047 in INR?,INR 16559
+GT0221,Which supplier supplies product PRD047?,SUP009 (Evergreen Distributors 009) supplies PRD047.
+GT0222,What category does product PRD048 belong to?,Office Supplies
+GT0223,What is the unit price of product PRD048 in INR?,INR 16906
+GT0224,Which supplier supplies product PRD048?,SUP016 (BluePeak Industries 016) supplies PRD048.
+GT0225,What category does product PRD049 belong to?,Furniture
+GT0226,What is the unit price of product PRD049 in INR?,INR 17253
+GT0227,Which supplier supplies product PRD049?,SUP023 (Delta Enterprises 023) supplies PRD049.
+GT0228,What category does product PRD050 belong to?,Packaging
+GT0229,What is the unit price of product PRD050 in INR?,INR 17600
+GT0230,Which supplier supplies product PRD050?,SUP030 (Aster Supply Co 030) supplies PRD050.
+GT0231,What category does product PRD051 belong to?,Electronics
+GT0232,What is the unit price of product PRD051 in INR?,INR 17947
+GT0233,Which supplier supplies product PRD051?,SUP037 (Cedar Distributors 037) supplies PRD051.
+GT0234,What category does product PRD052 belong to?,Home Appliances
+GT0235,What is the unit price of product PRD052 in INR?,INR 294
+GT0236,Which supplier supplies product PRD052?,SUP004 (Evergreen Industries 004) supplies PRD052.
+GT0237,What category does product PRD053 belong to?,Office Supplies
+GT0238,What is the unit price of product PRD053 in INR?,INR 641
+GT0239,Which supplier supplies product PRD053?,SUP011 (BluePeak Enterprises 011) supplies PRD053.
+GT0240,What category does product PRD054 belong to?,Furniture
+GT0241,What is the unit price of product PRD054 in INR?,INR 988
+GT0242,Which supplier supplies product PRD054?,SUP018 (Delta Supply Co 018) supplies PRD054.
+GT0243,What category does product PRD055 belong to?,Packaging
+GT0244,What is the unit price of product PRD055 in INR?,INR 1335
+GT0245,Which supplier supplies product PRD055?,SUP025 (Aster Distributors 025) supplies PRD055.
+GT0246,What category does product PRD056 belong to?,Electronics
+GT0247,What is the unit price of product PRD056 in INR?,INR 1682
+GT0248,Which supplier supplies product PRD056?,SUP032 (Cedar Industries 032) supplies PRD056.
+GT0249,What category does product PRD057 belong to?,Home Appliances
+GT0250,What is the unit price of product PRD057 in INR?,INR 2029
+GT0251,Which supplier supplies product PRD057?,SUP039 (Evergreen Enterprises 039) supplies PRD057.
+GT0252,What category does product PRD058 belong to?,Office Supplies
+GT0253,What is the unit price of product PRD058 in INR?,INR 2376
+GT0254,Which supplier supplies product PRD058?,SUP006 (BluePeak Supply Co 006) supplies PRD058.
+GT0255,What category does product PRD059 belong to?,Furniture
+GT0256,What is the unit price of product PRD059 in INR?,INR 2723
+GT0257,Which supplier supplies product PRD059?,SUP013 (Delta Distributors 013) supplies PRD059.
+GT0258,What category does product PRD060 belong to?,Packaging
+GT0259,What is the unit price of product PRD060 in INR?,INR 3070
+GT0260,Which supplier supplies product PRD060?,SUP020 (Aster Industries 020) supplies PRD060.
+GT0261,What category does product PRD061 belong to?,Electronics
+GT0262,What is the unit price of product PRD061 in INR?,INR 3417
+GT0263,Which supplier supplies product PRD061?,SUP027 (Cedar Enterprises 027) supplies PRD061.
+GT0264,What category does product PRD062 belong to?,Home Appliances
+GT0265,What is the unit price of product PRD062 in INR?,INR 3764
+GT0266,Which supplier supplies product PRD062?,SUP034 (Evergreen Supply Co 034) supplies PRD062.
+GT0267,What category does product PRD063 belong to?,Office Supplies
+GT0268,What is the unit price of product PRD063 in INR?,INR 4111
+GT0269,Which supplier supplies product PRD063?,SUP001 (BluePeak Distributors 001) supplies PRD063.
+GT0270,What category does product PRD064 belong to?,Furniture
+GT0271,What is the unit price of product PRD064 in INR?,INR 4458
+GT0272,Which supplier supplies product PRD064?,SUP008 (Delta Industries 008) supplies PRD064.
+GT0273,What category does product PRD065 belong to?,Packaging
+GT0274,What is the unit price of product PRD065 in INR?,INR 4805
+GT0275,Which supplier supplies product PRD065?,SUP015 (Aster Enterprises 015) supplies PRD065.
+GT0276,What category does product PRD066 belong to?,Electronics
+GT0277,What is the unit price of product PRD066 in INR?,INR 5152
+GT0278,Which supplier supplies product PRD066?,SUP022 (Cedar Supply Co 022) supplies PRD066.
+GT0279,What category does product PRD067 belong to?,Home Appliances
+GT0280,What is the unit price of product PRD067 in INR?,INR 5499
+GT0281,Which supplier supplies product PRD067?,SUP029 (Evergreen Distributors 029) supplies PRD067.
+GT0282,What category does product PRD068 belong to?,Office Supplies
+GT0283,What is the unit price of product PRD068 in INR?,INR 5846
+GT0284,Which supplier supplies product PRD068?,SUP036 (BluePeak Industries 036) supplies PRD068.
+GT0285,What category does product PRD069 belong to?,Furniture
+GT0286,What is the unit price of product PRD069 in INR?,INR 6193
+GT0287,Which supplier supplies product PRD069?,SUP003 (Delta Enterprises 003) supplies PRD069.
+GT0288,What category does product PRD070 belong to?,Packaging
+GT0289,What is the unit price of product PRD070 in INR?,INR 6540
+GT0290,Which supplier supplies product PRD070?,SUP010 (Aster Supply Co 010) supplies PRD070.
+GT0291,What category does product PRD071 belong to?,Electronics
+GT0292,What is the unit price of product PRD071 in INR?,INR 6887
+GT0293,Which supplier supplies product PRD071?,SUP017 (Cedar Distributors 017) supplies PRD071.
+GT0294,What category does product PRD072 belong to?,Home Appliances
+GT0295,What is the unit price of product PRD072 in INR?,INR 7234
+GT0296,Which supplier supplies product PRD072?,SUP024 (Evergreen Industries 024) supplies PRD072.
+GT0297,What category does product PRD073 belong to?,Office Supplies
+GT0298,What is the unit price of product PRD073 in INR?,INR 7581
+GT0299,Which supplier supplies product PRD073?,SUP031 (BluePeak Enterprises 031) supplies PRD073.
+GT0300,What category does product PRD074 belong to?,Furniture
+GT0301,What is the unit price of product PRD074 in INR?,INR 7928
+GT0302,Which supplier supplies product PRD074?,SUP038 (Delta Supply Co 038) supplies PRD074.
+GT0303,What category does product PRD075 belong to?,Packaging
+GT0304,What is the unit price of product PRD075 in INR?,INR 8275
+GT0305,Which supplier supplies product PRD075?,SUP005 (Aster Distributors 005) supplies PRD075.
+GT0306,What category does product PRD076 belong to?,Electronics
+GT0307,What is the unit price of product PRD076 in INR?,INR 8622
+GT0308,Which supplier supplies product PRD076?,SUP012 (Cedar Industries 012) supplies PRD076.
+GT0309,What category does product PRD077 belong to?,Home Appliances
+GT0310,What is the unit price of product PRD077 in INR?,INR 8969
+GT0311,Which supplier supplies product PRD077?,SUP019 (Evergreen Enterprises 019) supplies PRD077.
+GT0312,What category does product PRD078 belong to?,Office Supplies
+GT0313,What is the unit price of product PRD078 in INR?,INR 9316
+GT0314,Which supplier supplies product PRD078?,SUP026 (BluePeak Supply Co 026) supplies PRD078.
+GT0315,What category does product PRD079 belong to?,Furniture
+GT0316,What is the unit price of product PRD079 in INR?,INR 9663
+GT0317,Which supplier supplies product PRD079?,SUP033 (Delta Distributors 033) supplies PRD079.
+GT0318,What category does product PRD080 belong to?,Packaging
+GT0319,What is the unit price of product PRD080 in INR?,INR 10010
+GT0320,Which supplier supplies product PRD080?,SUP040 (Aster Industries 040) supplies PRD080.
+GT0321,What category does product PRD081 belong to?,Electronics
+GT0322,What is the unit price of product PRD081 in INR?,INR 10357
+GT0323,Which supplier supplies product PRD081?,SUP007 (Cedar Enterprises 007) supplies PRD081.
+GT0324,What category does product PRD082 belong to?,Home Appliances
+GT0325,What is the unit price of product PRD082 in INR?,INR 10704
+GT0326,Which supplier supplies product PRD082?,SUP014 (Evergreen Supply Co 014) supplies PRD082.
+GT0327,What category does product PRD083 belong to?,Office Supplies
+GT0328,What is the unit price of product PRD083 in INR?,INR 11051
+GT0329,Which supplier supplies product PRD083?,SUP021 (BluePeak Distributors 021) supplies PRD083.
+GT0330,What category does product PRD084 belong to?,Furniture
+GT0331,What is the unit price of product PRD084 in INR?,INR 11398
+GT0332,Which supplier supplies product PRD084?,SUP028 (Delta Industries 028) supplies PRD084.
+GT0333,What category does product PRD085 belong to?,Packaging
+GT0334,What is the unit price of product PRD085 in INR?,INR 11745
+GT0335,Which supplier supplies product PRD085?,SUP035 (Aster Enterprises 035) supplies PRD085.
+GT0336,What category does product PRD086 belong to?,Electronics
+GT0337,What is the unit price of product PRD086 in INR?,INR 12092
+GT0338,Which supplier supplies product PRD086?,SUP002 (Cedar Supply Co 002) supplies PRD086.
+GT0339,What category does product PRD087 belong to?,Home Appliances
+GT0340,What is the unit price of product PRD087 in INR?,INR 12439
+GT0341,Which supplier supplies product PRD087?,SUP009 (Evergreen Distributors 009) supplies PRD087.
+GT0342,What category does product PRD088 belong to?,Office Supplies
+GT0343,What is the unit price of product PRD088 in INR?,INR 12786
+GT0344,Which supplier supplies product PRD088?,SUP016 (BluePeak Industries 016) supplies PRD088.
+GT0345,What category does product PRD089 belong to?,Furniture
+GT0346,What is the unit price of product PRD089 in INR?,INR 13133
+GT0347,Which supplier supplies product PRD089?,SUP023 (Delta Enterprises 023) supplies PRD089.
+GT0348,What category does product PRD090 belong to?,Packaging
+GT0349,What is the unit price of product PRD090 in INR?,INR 13480
+GT0350,Which supplier supplies product PRD090?,SUP030 (Aster Supply Co 030) supplies PRD090.
+GT0351,What category does product PRD091 belong to?,Electronics
+GT0352,What is the unit price of product PRD091 in INR?,INR 13827
+GT0353,Which supplier supplies product PRD091?,SUP037 (Cedar Distributors 037) supplies PRD091.
+GT0354,What category does product PRD092 belong to?,Home Appliances
+GT0355,What is the unit price of product PRD092 in INR?,INR 14174
+GT0356,Which supplier supplies product PRD092?,SUP004 (Evergreen Industries 004) supplies PRD092.
+GT0357,What category does product PRD093 belong to?,Office Supplies
+GT0358,What is the unit price of product PRD093 in INR?,INR 14521
+GT0359,Which supplier supplies product PRD093?,SUP011 (BluePeak Enterprises 011) supplies PRD093.
+GT0360,What category does product PRD094 belong to?,Furniture
+GT0361,What is the unit price of product PRD094 in INR?,INR 14868
+GT0362,Which supplier supplies product PRD094?,SUP018 (Delta Supply Co 018) supplies PRD094.
+GT0363,What category does product PRD095 belong to?,Packaging
+GT0364,What is the unit price of product PRD095 in INR?,INR 15215
+GT0365,Which supplier supplies product PRD095?,SUP025 (Aster Distributors 025) supplies PRD095.
+GT0366,What category does product PRD096 belong to?,Electronics
+GT0367,What is the unit price of product PRD096 in INR?,INR 15562
+GT0368,Which supplier supplies product PRD096?,SUP032 (Cedar Industries 032) supplies PRD096.
+GT0369,What category does product PRD097 belong to?,Home Appliances
+GT0370,What is the unit price of product PRD097 in INR?,INR 15909
+GT0371,Which supplier supplies product PRD097?,SUP039 (Evergreen Enterprises 039) supplies PRD097.
+GT0372,What category does product PRD098 belong to?,Office Supplies
+GT0373,What is the unit price of product PRD098 in INR?,INR 16256
+GT0374,Which supplier supplies product PRD098?,SUP006 (BluePeak Supply Co 006) supplies PRD098.
+GT0375,What category does product PRD099 belong to?,Furniture
+GT0376,What is the unit price of product PRD099 in INR?,INR 16603
+GT0377,Which supplier supplies product PRD099?,SUP013 (Delta Distributors 013) supplies PRD099.
+GT0378,What category does product PRD100 belong to?,Packaging
+GT0379,What is the unit price of product PRD100 in INR?,INR 16950
+GT0380,Which supplier supplies product PRD100?,SUP020 (Aster Industries 020) supplies PRD100.
+GT0381,What is the account status of customer CUS0001?,Active
+GT0382,What city is customer CUS0001 located in?,Mumbai
+GT0383,What is the account status of customer CUS0002?,Active
+GT0384,What city is customer CUS0002 located in?,Kolkata
+GT0385,What is the account status of customer CUS0003?,Active
+GT0386,What city is customer CUS0003 located in?,Kochi
+GT0387,What is the account status of customer CUS0004?,Active
+GT0388,What city is customer CUS0004 located in?,Bengaluru
+GT0389,What is the account status of customer CUS0005?,Active
+GT0390,What city is customer CUS0005 located in?,Delhi
+GT0391,What is the account status of customer CUS0006?,Active
+GT0392,What city is customer CUS0006 located in?,Jaipur
+GT0393,What is the account status of customer CUS0007?,Active
+GT0394,What city is customer CUS0007 located in?,Chennai
+GT0395,What is the account status of customer CUS0008?,Active
+GT0396,What city is customer CUS0008 located in?,Pune
+GT0397,What is the account status of customer CUS0009?,Active
+GT0398,What city is customer CUS0009 located in?,Ahmedabad
+GT0399,What is the account status of customer CUS0010?,Active
+GT0400,What city is customer CUS0010 located in?,Hyderabad
+GT0401,What is the account status of customer CUS0011?,Active
+GT0402,What city is customer CUS0011 located in?,Mumbai
+GT0403,What is the account status of customer CUS0012?,Active
+GT0404,What city is customer CUS0012 located in?,Kolkata
+GT0405,What is the account status of customer CUS0013?,Active
+GT0406,What city is customer CUS0013 located in?,Kochi
+GT0407,What is the account status of customer CUS0014?,Active
+GT0408,What city is customer CUS0014 located in?,Bengaluru
+GT0409,What is the account status of customer CUS0015?,Active
+GT0410,What city is customer CUS0015 located in?,Delhi
+GT0411,What is the account status of customer CUS0016?,Active
+GT0412,What city is customer CUS0016 located in?,Jaipur
+GT0413,What is the account status of customer CUS0017?,Active
+GT0414,What city is customer CUS0017 located in?,Chennai
+GT0415,What is the account status of customer CUS0018?,Active
+GT0416,What city is customer CUS0018 located in?,Pune
+GT0417,What is the account status of customer CUS0019?,On Hold
+GT0418,What city is customer CUS0019 located in?,Ahmedabad
+GT0419,What is the account status of customer CUS0020?,Active
+GT0420,What city is customer CUS0020 located in?,Hyderabad
+GT0421,What is the account status of customer CUS0021?,Active
+GT0422,What city is customer CUS0021 located in?,Mumbai
+GT0423,What is the account status of customer CUS0022?,Active
+GT0424,What city is customer CUS0022 located in?,Kolkata
+GT0425,What is the account status of customer CUS0023?,Active
+GT0426,What city is customer CUS0023 located in?,Kochi
+GT0427,What is the account status of customer CUS0024?,Active
+GT0428,What city is customer CUS0024 located in?,Bengaluru
+GT0429,What is the account status of customer CUS0025?,Active
+GT0430,What city is customer CUS0025 located in?,Delhi
+GT0431,What is the account status of customer CUS0026?,Active
+GT0432,What city is customer CUS0026 located in?,Jaipur
+GT0433,What is the account status of customer CUS0027?,Active
+GT0434,What city is customer CUS0027 located in?,Chennai
+GT0435,What is the account status of customer CUS0028?,Active
+GT0436,What city is customer CUS0028 located in?,Pune
+GT0437,What is the account status of customer CUS0029?,Active
+GT0438,What city is customer CUS0029 located in?,Ahmedabad
+GT0439,What is the account status of customer CUS0030?,Active
+GT0440,What city is customer CUS0030 located in?,Hyderabad
+GT0441,What is the account status of customer CUS0031?,Active
+GT0442,What city is customer CUS0031 located in?,Mumbai
+GT0443,What is the account status of customer CUS0032?,Active
+GT0444,What city is customer CUS0032 located in?,Kolkata
+GT0445,What is the account status of customer CUS0033?,Active
+GT0446,What city is customer CUS0033 located in?,Kochi
+GT0447,What is the account status of customer CUS0034?,Active
+GT0448,What city is customer CUS0034 located in?,Bengaluru
+GT0449,What is the account status of customer CUS0035?,Active
+GT0450,What city is customer CUS0035 located in?,Delhi
+GT0451,What is the account status of customer CUS0036?,Active
+GT0452,What city is customer CUS0036 located in?,Jaipur
+GT0453,What is the account status of customer CUS0037?,Active
+GT0454,What city is customer CUS0037 located in?,Chennai
+GT0455,What is the account status of customer CUS0038?,On Hold
+GT0456,What city is customer CUS0038 located in?,Pune
+GT0457,What is the account status of customer CUS0039?,Active
+GT0458,What city is customer CUS0039 located in?,Ahmedabad
+GT0459,What is the account status of customer CUS0040?,Active
+GT0460,What city is customer CUS0040 located in?,Hyderabad
+GT0461,What is the account status of customer CUS0041?,Active
+GT0462,What city is customer CUS0041 located in?,Mumbai
+GT0463,What is the account status of customer CUS0042?,Active
+GT0464,What city is customer CUS0042 located in?,Kolkata
+GT0465,What is the account status of customer CUS0043?,Active
+GT0466,What city is customer CUS0043 located in?,Kochi
+GT0467,What is the account status of customer CUS0044?,Active
+GT0468,What city is customer CUS0044 located in?,Bengaluru
+GT0469,What is the account status of customer CUS0045?,Active
+GT0470,What city is customer CUS0045 located in?,Delhi
+GT0471,What is the account status of customer CUS0046?,Active
+GT0472,What city is customer CUS0046 located in?,Jaipur
+GT0473,What is the account status of customer CUS0047?,Active
+GT0474,What city is customer CUS0047 located in?,Chennai
+GT0475,What is the account status of customer CUS0048?,Active
+GT0476,What city is customer CUS0048 located in?,Pune
+GT0477,What is the account status of customer CUS0049?,Active
+GT0478,What city is customer CUS0049 located in?,Ahmedabad
+GT0479,What is the account status of customer CUS0050?,Active
+GT0480,What city is customer CUS0050 located in?,Hyderabad
+GT0481,What is the account status of customer CUS0051?,Active
+GT0482,What city is customer CUS0051 located in?,Mumbai
+GT0483,What is the account status of customer CUS0052?,Active
+GT0484,What city is customer CUS0052 located in?,Kolkata
+GT0485,What is the account status of customer CUS0053?,Active
+GT0486,What city is customer CUS0053 located in?,Kochi
+GT0487,What is the account status of customer CUS0054?,Active
+GT0488,What city is customer CUS0054 located in?,Bengaluru
+GT0489,What is the account status of customer CUS0055?,Active
+GT0490,What city is customer CUS0055 located in?,Delhi
+GT0491,What is the account status of customer CUS0056?,Active
+GT0492,What city is customer CUS0056 located in?,Jaipur
+GT0493,What is the account status of customer CUS0057?,On Hold
+GT0494,What city is customer CUS0057 located in?,Chennai
+GT0495,What is the account status of customer CUS0058?,Active
+GT0496,What city is customer CUS0058 located in?,Pune
+GT0497,What is the account status of customer CUS0059?,Active
+GT0498,What city is customer CUS0059 located in?,Ahmedabad
+GT0499,What is the account status of customer CUS0060?,Active
+GT0500,What city is customer CUS0060 located in?,Hyderabad
+GT0501,What is the account status of customer CUS0061?,Active
+GT0502,What city is customer CUS0061 located in?,Mumbai
+GT0503,What is the account status of customer CUS0062?,Active
+GT0504,What city is customer CUS0062 located in?,Kolkata
+GT0505,What is the account status of customer CUS0063?,Active
+GT0506,What city is customer CUS0063 located in?,Kochi
+GT0507,What is the account status of customer CUS0064?,Active
+GT0508,What city is customer CUS0064 located in?,Bengaluru
+GT0509,What is the account status of customer CUS0065?,Active
+GT0510,What city is customer CUS0065 located in?,Delhi
+GT0511,What is the account status of customer CUS0066?,Active
+GT0512,What city is customer CUS0066 located in?,Jaipur
+GT0513,What is the account status of customer CUS0067?,Active
+GT0514,What city is customer CUS0067 located in?,Chennai
+GT0515,What is the account status of customer CUS0068?,Active
+GT0516,What city is customer CUS0068 located in?,Pune
+GT0517,What is the account status of customer CUS0069?,Active
+GT0518,What city is customer CUS0069 located in?,Ahmedabad
+GT0519,What is the account status of customer CUS0070?,Active
+GT0520,What city is customer CUS0070 located in?,Hyderabad
+GT0521,What is the account status of customer CUS0071?,Active
+GT0522,What city is customer CUS0071 located in?,Mumbai
+GT0523,What is the account status of customer CUS0072?,Active
+GT0524,What city is customer CUS0072 located in?,Kolkata
+GT0525,What is the account status of customer CUS0073?,Active
+GT0526,What city is customer CUS0073 located in?,Kochi
+GT0527,What is the account status of customer CUS0074?,Active
+GT0528,What city is customer CUS0074 located in?,Bengaluru
+GT0529,What is the account status of customer CUS0075?,Active
+GT0530,What city is customer CUS0075 located in?,Delhi
+GT0531,What is the status of order ORD00001?,Shipped
+GT0532,Which customer placed order ORD00001?,CUS0013 (Customer Business 013)
+GT0533,What is the status of order ORD00002?,Cancelled
+GT0534,Which customer placed order ORD00002?,CUS0026 (Customer Business 026)
+GT0535,What is the status of order ORD00003?,Delivered
+GT0536,Which customer placed order ORD00003?,CUS0039 (Customer Business 039)
+GT0537,What is the status of order ORD00004?,Processing
+GT0538,Which customer placed order ORD00004?,CUS0052 (Customer Business 052)
+GT0539,What is the status of order ORD00005?,Returned
+GT0540,Which customer placed order ORD00005?,CUS0065 (Customer Business 065)
+GT0541,What is the status of order ORD00006?,Shipped
+GT0542,Which customer placed order ORD00006?,CUS0078 (Customer Business 078)
+GT0543,What is the status of order ORD00007?,Cancelled
+GT0544,Which customer placed order ORD00007?,CUS0091 (Customer Business 091)
+GT0545,What is the status of order ORD00008?,Delivered
+GT0546,Which customer placed order ORD00008?,CUS0004 (Customer Business 004)
+GT0547,What is the status of order ORD00009?,Processing
+GT0548,Which customer placed order ORD00009?,CUS0017 (Customer Business 017)
+GT0549,What is the status of order ORD00010?,Returned
+GT0550,Which customer placed order ORD00010?,CUS0030 (Customer Business 030)
+GT0551,What is the status of order ORD00011?,Shipped
+GT0552,Which customer placed order ORD00011?,CUS0043 (Customer Business 043)
+GT0553,What is the status of order ORD00012?,Cancelled
+GT0554,Which customer placed order ORD00012?,CUS0056 (Customer Business 056)
+GT0555,What is the status of order ORD00013?,Delivered
+GT0556,Which customer placed order ORD00013?,CUS0069 (Customer Business 069)
+GT0557,What is the status of order ORD00014?,Processing
+GT0558,Which customer placed order ORD00014?,CUS0082 (Customer Business 082)
+GT0559,What is the status of order ORD00015?,Returned
+GT0560,Which customer placed order ORD00015?,CUS0095 (Customer Business 095)
+GT0561,What is the status of order ORD00016?,Shipped
+GT0562,Which customer placed order ORD00016?,CUS0008 (Customer Business 008)
+GT0563,What is the status of order ORD00017?,Cancelled
+GT0564,Which customer placed order ORD00017?,CUS0021 (Customer Business 021)
+GT0565,What is the status of order ORD00018?,Delivered
+GT0566,Which customer placed order ORD00018?,CUS0034 (Customer Business 034)
+GT0567,What is the status of order ORD00019?,Processing
+GT0568,Which customer placed order ORD00019?,CUS0047 (Customer Business 047)
+GT0569,What is the status of order ORD00020?,Returned
+GT0570,Which customer placed order ORD00020?,CUS0060 (Customer Business 060)
+GT0571,What is the status of order ORD00021?,Shipped
+GT0572,Which customer placed order ORD00021?,CUS0073 (Customer Business 073)
+GT0573,What is the status of order ORD00022?,Cancelled
+GT0574,Which customer placed order ORD00022?,CUS0086 (Customer Business 086)
+GT0575,What is the status of order ORD00023?,Delivered
+GT0576,Which customer placed order ORD00023?,CUS0099 (Customer Business 099)
+GT0577,What is the status of order ORD00024?,Processing
+GT0578,Which customer placed order ORD00024?,CUS0012 (Customer Business 012)
+GT0579,What is the status of order ORD00025?,Returned
+GT0580,Which customer placed order ORD00025?,CUS0025 (Customer Business 025)
+GT0581,What is the status of order ORD00026?,Shipped
+GT0582,Which customer placed order ORD00026?,CUS0038 (Customer Business 038)
+GT0583,What is the status of order ORD00027?,Cancelled
+GT0584,Which customer placed order ORD00027?,CUS0051 (Customer Business 051)
+GT0585,What is the status of order ORD00028?,Delivered
+GT0586,Which customer placed order ORD00028?,CUS0064 (Customer Business 064)
+GT0587,What is the status of order ORD00029?,Processing
+GT0588,Which customer placed order ORD00029?,CUS0077 (Customer Business 077)
+GT0589,What is the status of order ORD00030?,Returned
+GT0590,Which customer placed order ORD00030?,CUS0090 (Customer Business 090)
+GT0591,What is the status of order ORD00031?,Shipped
+GT0592,Which customer placed order ORD00031?,CUS0003 (Customer Business 003)
+GT0593,What is the status of order ORD00032?,Cancelled
+GT0594,Which customer placed order ORD00032?,CUS0016 (Customer Business 016)
+GT0595,What is the status of order ORD00033?,Delivered
+GT0596,Which customer placed order ORD00033?,CUS0029 (Customer Business 029)
+GT0597,What is the status of order ORD00034?,Processing
+GT0598,Which customer placed order ORD00034?,CUS0042 (Customer Business 042)
+GT0599,What is the status of order ORD00035?,Returned
+GT0600,Which customer placed order ORD00035?,CUS0055 (Customer Business 055)
+GT0601,What is the status of order ORD00036?,Shipped
+GT0602,Which customer placed order ORD00036?,CUS0068 (Customer Business 068)
+GT0603,What is the status of order ORD00037?,Cancelled
+GT0604,Which customer placed order ORD00037?,CUS0081 (Customer Business 081)
+GT0605,What is the status of order ORD00038?,Delivered
+GT0606,Which customer placed order ORD00038?,CUS0094 (Customer Business 094)
+GT0607,What is the status of order ORD00039?,Processing
+GT0608,Which customer placed order ORD00039?,CUS0007 (Customer Business 007)
+GT0609,What is the status of order ORD00040?,Returned
+GT0610,Which customer placed order ORD00040?,CUS0020 (Customer Business 020)
+GT0611,What is the status of order ORD00041?,Shipped
+GT0612,Which customer placed order ORD00041?,CUS0033 (Customer Business 033)
+GT0613,What is the status of order ORD00042?,Cancelled
+GT0614,Which customer placed order ORD00042?,CUS0046 (Customer Business 046)
+GT0615,What is the status of order ORD00043?,Delivered
+GT0616,Which customer placed order ORD00043?,CUS0059 (Customer Business 059)
+GT0617,What is the status of order ORD00044?,Processing
+GT0618,Which customer placed order ORD00044?,CUS0072 (Customer Business 072)
+GT0619,What is the status of order ORD00045?,Returned
+GT0620,Which customer placed order ORD00045?,CUS0085 (Customer Business 085)
+GT0621,What is the status of order ORD00046?,Shipped
+GT0622,Which customer placed order ORD00046?,CUS0098 (Customer Business 098)
+GT0623,What is the status of order ORD00047?,Cancelled
+GT0624,Which customer placed order ORD00047?,CUS0011 (Customer Business 011)
+GT0625,What is the status of order ORD00048?,Delivered
+GT0626,Which customer placed order ORD00048?,CUS0024 (Customer Business 024)
+GT0627,What is the status of order ORD00049?,Processing
+GT0628,Which customer placed order ORD00049?,CUS0037 (Customer Business 037)
+GT0629,What is the status of order ORD00050?,Returned
+GT0630,Which customer placed order ORD00050?,CUS0050 (Customer Business 050)
+GT0631,What is the status of order ORD00051?,Shipped
+GT0632,Which customer placed order ORD00051?,CUS0063 (Customer Business 063)
+GT0633,What is the status of order ORD00052?,Cancelled
+GT0634,Which customer placed order ORD00052?,CUS0076 (Customer Business 076)
+GT0635,What is the status of order ORD00053?,Delivered
+GT0636,Which customer placed order ORD00053?,CUS0089 (Customer Business 089)
+GT0637,What is the status of order ORD00054?,Processing
+GT0638,Which customer placed order ORD00054?,CUS0002 (Customer Business 002)
+GT0639,What is the status of order ORD00055?,Returned
+GT0640,Which customer placed order ORD00055?,CUS0015 (Customer Business 015)
+GT0641,What is the status of order ORD00056?,Shipped
+GT0642,Which customer placed order ORD00056?,CUS0028 (Customer Business 028)
+GT0643,What is the status of order ORD00057?,Cancelled
+GT0644,Which customer placed order ORD00057?,CUS0041 (Customer Business 041)
+GT0645,What is the status of order ORD00058?,Delivered
+GT0646,Which customer placed order ORD00058?,CUS0054 (Customer Business 054)
+GT0647,What is the status of order ORD00059?,Processing
+GT0648,Which customer placed order ORD00059?,CUS0067 (Customer Business 067)
+GT0649,What is the status of order ORD00060?,Returned
+GT0650,Which customer placed order ORD00060?,CUS0080 (Customer Business 080)
+GT0651,What is the status of order ORD00061?,Shipped
+GT0652,Which customer placed order ORD00061?,CUS0093 (Customer Business 093)
+GT0653,What is the status of order ORD00062?,Cancelled
+GT0654,Which customer placed order ORD00062?,CUS0006 (Customer Business 006)
+GT0655,What is the status of order ORD00063?,Delivered
+GT0656,Which customer placed order ORD00063?,CUS0019 (Customer Business 019)
+GT0657,What is the status of order ORD00064?,Processing
+GT0658,Which customer placed order ORD00064?,CUS0032 (Customer Business 032)
+GT0659,What is the status of order ORD00065?,Returned
+GT0660,Which customer placed order ORD00065?,CUS0045 (Customer Business 045)
+GT0661,What is the status of order ORD00066?,Shipped
+GT0662,Which customer placed order ORD00066?,CUS0058 (Customer Business 058)
+GT0663,What is the status of order ORD00067?,Cancelled
+GT0664,Which customer placed order ORD00067?,CUS0071 (Customer Business 071)
+GT0665,What is the status of order ORD00068?,Delivered
+GT0666,Which customer placed order ORD00068?,CUS0084 (Customer Business 084)
+GT0667,What is the status of order ORD00069?,Processing
+GT0668,Which customer placed order ORD00069?,CUS0097 (Customer Business 097)
+GT0669,What is the status of order ORD00070?,Returned
+GT0670,Which customer placed order ORD00070?,CUS0010 (Customer Business 010)
+GT0671,What is the status of order ORD00071?,Shipped
+GT0672,Which customer placed order ORD00071?,CUS0023 (Customer Business 023)
+GT0673,What is the status of order ORD00072?,Cancelled
+GT0674,Which customer placed order ORD00072?,CUS0036 (Customer Business 036)
+GT0675,What is the status of order ORD00073?,Delivered
+GT0676,Which customer placed order ORD00073?,CUS0049 (Customer Business 049)
+GT0677,What is the status of order ORD00074?,Processing
+GT0678,Which customer placed order ORD00074?,CUS0062 (Customer Business 062)
+GT0679,What is the status of order ORD00075?,Returned
+GT0680,Which customer placed order ORD00075?,CUS0075 (Customer Business 075)
+GT0681,What is the status of order ORD00076?,Shipped
+GT0682,Which customer placed order ORD00076?,CUS0088 (Customer Business 088)
+GT0683,What is the status of order ORD00077?,Cancelled
+GT0684,Which customer placed order ORD00077?,CUS0001 (Customer Business 001)
+GT0685,What is the status of order ORD00078?,Delivered
+GT0686,Which customer placed order ORD00078?,CUS0014 (Customer Business 014)
+GT0687,What is the status of order ORD00079?,Processing
+GT0688,Which customer placed order ORD00079?,CUS0027 (Customer Business 027)
+GT0689,What is the status of order ORD00080?,Returned
+GT0690,Which customer placed order ORD00080?,CUS0040 (Customer Business 040)
+GT0691,What is the status of order ORD00081?,Shipped
+GT0692,Which customer placed order ORD00081?,CUS0053 (Customer Business 053)
+GT0693,What is the status of order ORD00082?,Cancelled
+GT0694,Which customer placed order ORD00082?,CUS0066 (Customer Business 066)
+GT0695,What is the status of order ORD00083?,Delivered
+GT0696,Which customer placed order ORD00083?,CUS0079 (Customer Business 079)
+GT0697,What is the status of order ORD00084?,Processing
+GT0698,Which customer placed order ORD00084?,CUS0092 (Customer Business 092)
+GT0699,What is the status of order ORD00085?,Returned
+GT0700,Which customer placed order ORD00085?,CUS0005 (Customer Business 005)
+GT0701,What is the status of order ORD00086?,Shipped
+GT0702,Which customer placed order ORD00086?,CUS0018 (Customer Business 018)
+GT0703,What is the status of order ORD00087?,Cancelled
+GT0704,Which customer placed order ORD00087?,CUS0031 (Customer Business 031)
+GT0705,What is the status of order ORD00088?,Delivered
+GT0706,Which customer placed order ORD00088?,CUS0044 (Customer Business 044)
+GT0707,What is the status of order ORD00089?,Processing
+GT0708,Which customer placed order ORD00089?,CUS0057 (Customer Business 057)
+GT0709,What is the status of order ORD00090?,Returned
+GT0710,Which customer placed order ORD00090?,CUS0070 (Customer Business 070)
+GT0711,What is the status of order ORD00091?,Shipped
+GT0712,Which customer placed order ORD00091?,CUS0083 (Customer Business 083)
+GT0713,What is the status of order ORD00092?,Cancelled
+GT0714,Which customer placed order ORD00092?,CUS0096 (Customer Business 096)
+GT0715,What is the status of order ORD00093?,Delivered
+GT0716,Which customer placed order ORD00093?,CUS0009 (Customer Business 009)
+GT0717,What is the status of order ORD00094?,Processing
+GT0718,Which customer placed order ORD00094?,CUS0022 (Customer Business 022)
+GT0719,What is the status of order ORD00095?,Returned
+GT0720,Which customer placed order ORD00095?,CUS0035 (Customer Business 035)
+GT0721,What is the status of order ORD00096?,Shipped
+GT0722,Which customer placed order ORD00096?,CUS0048 (Customer Business 048)
+GT0723,What is the status of order ORD00097?,Cancelled
+GT0724,Which customer placed order ORD00097?,CUS0061 (Customer Business 061)
+GT0725,What is the status of order ORD00098?,Delivered
+GT0726,Which customer placed order ORD00098?,CUS0074 (Customer Business 074)
+GT0727,What is the status of order ORD00099?,Processing
+GT0728,Which customer placed order ORD00099?,CUS0087 (Customer Business 087)
+GT0729,What is the status of order ORD00100?,Returned
+GT0730,Which customer placed order ORD00100?,CUS0100 (Customer Business 100)
+GT0731,How many available units are recorded for inventory INV0001?,26 units
+GT0732,How many available units are recorded for inventory INV0002?,52 units
+GT0733,How many available units are recorded for inventory INV0003?,78 units
+GT0734,How many available units are recorded for inventory INV0004?,104 units
+GT0735,How many available units are recorded for inventory INV0005?,180 units
+GT0736,How many available units are recorded for inventory INV0006?,206 units
+GT0737,How many available units are recorded for inventory INV0007?,232 units
+GT0738,How many available units are recorded for inventory INV0008?,258 units
+GT0739,How many available units are recorded for inventory INV0009?,0 units
+GT0740,How many available units are recorded for inventory INV0010?,60 units
+GT0741,How many available units are recorded for inventory INV0011?,86 units
+GT0742,How many available units are recorded for inventory INV0012?,112 units
+GT0743,How many available units are recorded for inventory INV0013?,138 units
+GT0744,How many available units are recorded for inventory INV0014?,214 units
+GT0745,How many available units are recorded for inventory INV0015?,240 units
+GT0746,How many available units are recorded for inventory INV0016?,266 units
+GT0747,How many available units are recorded for inventory INV0017?,0 units
+GT0748,How many available units are recorded for inventory INV0018?,18 units
+GT0749,How many available units are recorded for inventory INV0019?,94 units
+GT0750,How many available units are recorded for inventory INV0020?,120 units
+GT0751,How many available units are recorded for inventory INV0021?,146 units
+GT0752,How many available units are recorded for inventory INV0022?,172 units
+GT0753,How many available units are recorded for inventory INV0023?,248 units
+GT0754,How many available units are recorded for inventory INV0024?,274 units
+GT0755,How many available units are recorded for inventory INV0025?,0 units
+GT0756,How many available units are recorded for inventory INV0026?,26 units
+GT0757,How many available units are recorded for inventory INV0027?,52 units
+GT0758,How many available units are recorded for inventory INV0028?,128 units
+GT0759,How many available units are recorded for inventory INV0029?,154 units
+GT0760,How many available units are recorded for inventory INV0030?,180 units
+GT0761,How many available units are recorded for inventory INV0031?,206 units
+GT0762,How many available units are recorded for inventory INV0032?,282 units
+GT0763,How many available units are recorded for inventory INV0033?,8 units
+GT0764,How many available units are recorded for inventory INV0034?,34 units
+GT0765,How many available units are recorded for inventory INV0035?,60 units
+GT0766,How many available units are recorded for inventory INV0036?,86 units
+GT0767,How many available units are recorded for inventory INV0037?,162 units
+GT0768,How many available units are recorded for inventory INV0038?,188 units
+GT0769,How many available units are recorded for inventory INV0039?,214 units
+GT0770,How many available units are recorded for inventory INV0040?,240 units
+GT0771,How many available units are recorded for inventory INV0041?,16 units
+GT0772,How many available units are recorded for inventory INV0042?,42 units
+GT0773,How many available units are recorded for inventory INV0043?,68 units
+GT0774,How many available units are recorded for inventory INV0044?,94 units
+GT0775,How many available units are recorded for inventory INV0045?,120 units
+GT0776,How many available units are recorded for inventory INV0046?,196 units
+GT0777,How many available units are recorded for inventory INV0047?,222 units
+GT0778,How many available units are recorded for inventory INV0048?,248 units
+GT0779,How many available units are recorded for inventory INV0049?,0 units
+GT0780,How many available units are recorded for inventory INV0050?,50 units
+GT0781,What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0782,"According to policy, what is the allowed return window?",Customers may request a return within 30 calendar days after delivery.
+GT0783,What rule applies here: what is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0784,Please state the policy answer: What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0785,What does the relevant policy say? What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0786,"In this system, what is the allowed return window?",Customers may request a return within 30 calendar days after delivery.
+GT0787,Give the policy-based answer to this: What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0788,Which rule should staff follow? What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0789,What is the correct policy response? What is the allowed return window?,Customers may request a return within 30 calendar days after delivery.
+GT0790,"Under the documented policy, what is the allowed return window?",Customers may request a return within 30 calendar days after delivery.
+GT0791,How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0792,"According to policy, how long does refund processing take after inspection approval?",Refunds are processed within 7 business days after inspection approval.
+GT0793,What rule applies here: how long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0794,Please state the policy answer: How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0795,What does the relevant policy say? How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0796,"In this system, how long does refund processing take after inspection approval?",Refunds are processed within 7 business days after inspection approval.
+GT0797,Give the policy-based answer to this: How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0798,Which rule should staff follow? How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0799,What is the correct policy response? How long does refund processing take after inspection approval?,Refunds are processed within 7 business days after inspection approval.
+GT0800,"Under the documented policy, how long does refund processing take after inspection approval?",Refunds are processed within 7 business days after inspection approval.
+GT0801,When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0802,"According to policy, when should inventory replenishment be requested?",Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0803,What rule applies here: when should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0804,Please state the policy answer: When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0805,What does the relevant policy say? When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0806,"In this system, when should inventory replenishment be requested?",Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0807,Give the policy-based answer to this: When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0808,Which rule should staff follow? When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0809,What is the correct policy response? When should inventory replenishment be requested?,Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0810,"Under the documented policy, when should inventory replenishment be requested?",Create a replenishment request when available stock is below the product reorder level; available stock equals stock units minus reserved units.
+GT0811,Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0812,"According to policy, can an order in Shipped status be cancelled?",No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0813,What rule applies here: can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0814,Please state the policy answer: Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0815,What does the relevant policy say? Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0816,"In this system, can an order in Shipped status be cancelled?",No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0817,Give the policy-based answer to this: Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0818,Which rule should staff follow? Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0819,What is the correct policy response? Can an order in Shipped status be cancelled?,No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0820,"Under the documented policy, can an order in Shipped status be cancelled?",No. Shipped orders cannot be cancelled; the customer must use the returns process.
+GT0821,What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0822,"According to policy, what approval is needed for a customer marked On Hold?",Finance approval is required before new orders are released.
+GT0823,What rule applies here: what approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0824,Please state the policy answer: What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0825,What does the relevant policy say? What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0826,"In this system, what approval is needed for a customer marked On Hold?",Finance approval is required before new orders are released.
+GT0827,Give the policy-based answer to this: What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0828,Which rule should staff follow? What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0829,What is the correct policy response? What approval is needed for a customer marked On Hold?,Finance approval is required before new orders are released.
+GT0830,"Under the documented policy, what approval is needed for a customer marked On Hold?",Finance approval is required before new orders are released.
+GT0831,What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0832,"According to policy, what should happen if an order references a nonexistent customer?",The invalid reference should be rejected and reported.
+GT0833,What rule applies here: what should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0834,Please state the policy answer: What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0835,What does the relevant policy say? What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0836,"In this system, what should happen if an order references a nonexistent customer?",The invalid reference should be rejected and reported.
+GT0837,Give the policy-based answer to this: What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0838,Which rule should staff follow? What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0839,What is the correct policy response? What should happen if an order references a nonexistent customer?,The invalid reference should be rejected and reported.
+GT0840,"Under the documented policy, what should happen if an order references a nonexistent customer?",The invalid reference should be rejected and reported.
+GT0841,Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0842,"According to policy, which transaction statuses count as completed receipts?",Only transactions with Completed status count as completed receipts.
+GT0843,What rule applies here: which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0844,Please state the policy answer: Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0845,What does the relevant policy say? Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0846,"In this system, which transaction statuses count as completed receipts?",Only transactions with Completed status count as completed receipts.
+GT0847,Give the policy-based answer to this: Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0848,Which rule should staff follow? Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0849,What is the correct policy response? Which transaction statuses count as completed receipts?,Only transactions with Completed status count as completed receipts.
+GT0850,"Under the documented policy, which transaction statuses count as completed receipts?",Only transactions with Completed status count as completed receipts.
+GT0851,How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0852,"According to policy, how should conflicting duplicate records be handled?",Conflicting attributes for the same business key must be flagged for review.
+GT0853,What rule applies here: how should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0854,Please state the policy answer: How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0855,What does the relevant policy say? How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0856,"In this system, how should conflicting duplicate records be handled?",Conflicting attributes for the same business key must be flagged for review.
+GT0857,Give the policy-based answer to this: How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0858,Which rule should staff follow? How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0859,What is the correct policy response? How should conflicting duplicate records be handled?,Conflicting attributes for the same business key must be flagged for review.
+GT0860,"Under the documented policy, how should conflicting duplicate records be handled?",Conflicting attributes for the same business key must be flagged for review.
+GT0861,What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0862,"According to policy, what details should be recorded for delivery exceptions?","Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0863,What rule applies here: what details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0864,Please state the policy answer: What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0865,What does the relevant policy say? What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0866,"In this system, what details should be recorded for delivery exceptions?","Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0867,Give the policy-based answer to this: What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0868,Which rule should staff follow? What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0869,What is the correct policy response? What details should be recorded for delivery exceptions?,"Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0870,"Under the documented policy, what details should be recorded for delivery exceptions?","Record the event type, event date, and location, and compare actual delivery with the promised date."
+GT0871,How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0872,"According to policy, how should sensitive values be handled in responses?",Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0873,What rule applies here: how should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0874,Please state the policy answer: How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0875,What does the relevant policy say? How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0876,"In this system, how should sensitive values be handled in responses?",Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0877,Give the policy-based answer to this: How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0878,Which rule should staff follow? How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0879,What is the correct policy response? How should sensitive values be handled in responses?,Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0880,"Under the documented policy, how should sensitive values be handled in responses?",Mask sensitive values where appropriate and avoid exposing sensitive identifiers.
+GT0881,What is the line total for order item ITM00001?,INR 24596
+GT0882,What is the line total for order item ITM00002?,INR 84336
+GT0883,What is the line total for order item ITM00003?,INR 179470
+GT0884,What is the line total for order item ITM00004?,INR 75998
+GT0885,What is the line total for order item ITM00005?,INR 187920
+GT0886,What is the line total for order item ITM00006?,INR 17936
+GT0887,What is the line total for order item ITM00007?,INR 13686
+GT0888,What is the line total for order item ITM00008?,INR 63710
+GT0889,What is the line total for order item ITM00009?,INR 5128
+GT0890,What is the line total for order item ITM00010?,INR 71940
+GT0891,What is the line total for order item ITM00011?,INR 174146
+GT0892,What is the line total for order item ITM00012?,INR 27846
+GT0893,What is the line total for order item ITM00013?,INR 150740
+GT0894,What is the line total for order item ITM00014?,INR 40308
+GT0895,What is the line total for order item ITM00015?,INR 8010
+GT0896,What is the line total for order item ITM00016?,INR 65106
+GT0897,What is the line total for order item ITM00017?,INR 157596
+GT0898,What is the line total for order item ITM00018?,INR 34980
+GT0899,What is the line total for order item ITM00019?,INR 148158
+GT0900,What is the line total for order item ITM00020?,INR 14130
+GT0901,What is the line total for order item ITM00021?,INR 8116
+GT0902,What is the line total for order item ITM00022?,INR 55496
+GT0903,What is the line total for order item ITM00023?,INR 138270
+GT0904,What is the line total for order item ITM00024?,INR 39338
+GT0905,What is the line total for order item ITM00025?,INR 142800
+GT0906,What is the line total for order item ITM00026?,INR 281656
+GT0907,What is the line total for order item ITM00027?,INR 5446
+GT0908,What is the line total for order item ITM00028?,INR 43110
+GT0909,What is the line total for order item ITM00029?,INR 116168
+GT0910,What is the line total for order item ITM00030?,INR 40920
+GT0911,What is the line total for order item ITM00031?,INR 134666
+GT0912,What is the line total for order item ITM00032?,INR 263806
+GT0913,What is the line total for order item ITM00033?,INR 68340
+GT0914,What is the line total for order item ITM00034?,INR 27948
+GT0915,What is the line total for order item ITM00035?,INR 91290
+GT0916,What is the line total for order item ITM00036?,INR 39726
+GT0917,What is the line total for order item ITM00037?,INR 123756
+GT0918,What is the line total for order item ITM00038?,INR 243180
+GT0919,What is the line total for order item ITM00039?,INR 73998
+GT0920,What is the line total for order item ITM00040?,INR 10010
+GT0921,What is the line total for order item ITM00041?,INR 63636
+GT0922,What is the line total for order item ITM00042?,INR 35756
+GT0923,What is the line total for order item ITM00043?,INR 110070
+GT0924,What is the line total for order item ITM00044?,INR 219778
+GT0925,What is the line total for order item ITM00045?,INR 76880
+GT0926,What is the line total for order item ITM00046?,INR 203376
+GT0927,What is the line total for order item ITM00047?,INR 33206
+GT0928,What is the line total for order item ITM00048?,INR 29010
+GT0929,What is the line total for order item ITM00049?,INR 93608
+GT0930,What is the line total for order item ITM00050?,INR 193600
+GT0931,What is the line total for order item ITM00051?,INR 76986
+GT0932,What is the line total for order item ITM00052?,INR 193766
+GT0933,What is the line total for order item ITM00053?,INR 11940
+GT0934,What is the line total for order item ITM00054?,INR 19488
+GT0935,What is the line total for order item ITM00055?,INR 74370
+GT0936,What is the line total for order item ITM00056?,INR 2646
+GT0937,What is the line total for order item ITM00057?,INR 74316
+GT0938,What is the line total for order item ITM00058?,INR 181380
+GT0939,What is the line total for order item ITM00059?,INR 23238
+GT0940,What is the line total for order item ITM00060?,INR 7190
+GT0941,What is the line total for order item ITM00061?,INR 52356
+GT0942,What is the line total for order item ITM00062?,INR 6916
+GT0943,What is the line total for order item ITM00063?,INR 68870
+GT0944,What is the line total for order item ITM00064?,INR 166218
+GT0945,What is the line total for order item ITM00065?,INR 31760
+GT0946,What is the line total for order item ITM00066?,INR 149796
+GT0947,What is the line total for order item ITM00067?,INR 27566
+GT0948,What is the line total for order item ITM00068?,INR 8410
+GT0949,What is the line total for order item ITM00069?,INR 60648
+GT0950,What is the line total for order item ITM00070?,INR 148280
+GT0951,What is the line total for order item ITM00071?,INR 37506
+GT0952,What is the line total for order item ITM00072?,INR 145826
+GT0953,What is the line total for order item ITM00073?,INR 289540
+GT0954,What is the line total for order item ITM00074?,INR 7128
+GT0955,What is the line total for order item ITM00075?,INR 49650
+GT0956,What is the line total for order item ITM00076?,INR 127566
+GT0957,What is the line total for order item ITM00077?,INR 40476
+GT0958,What is the line total for order item ITM00078?,INR 139080
+GT0959,What is the line total for order item ITM00079?,INR 273078
+GT0960,What is the line total for order item ITM00080?,INR 3070
+GT0961,What is the line total for order item ITM00081?,INR 35876
+GT0962,What is the line total for order item ITM00082?,INR 104076
+GT0963,What is the line total for order item ITM00083?,INR 40670
+GT0964,What is the line total for order item ITM00084?,INR 129558
+GT0965,What is the line total for order item ITM00085?,INR 253840
+GT0966,What is the line total for order item ITM00086?,INR 71516
+GT0967,What is the line total for order item ITM00087?,INR 19326
+GT0968,What is the line total for order item ITM00088?,INR 77810
+GT0969,What is the line total for order item ITM00089?,INR 38088
+GT0970,What is the line total for order item ITM00090?,INR 117260
+GT0971,What is the line total for order item ITM00091?,INR 231826
+GT0972,What is the line total for order item ITM00092?,INR 75786
+GT0973,What is the line total for order item ITM00093?,INR 207140
+GT0974,What is the line total for order item ITM00094?,INR 48768
+GT0975,What is the line total for order item ITM00095?,INR 32730
+GT0976,What is the line total for order item ITM00096?,INR 102186
+GT0977,What is the line total for order item ITM00097?,INR 207036
+GT0978,What is the line total for order item ITM00098?,INR 77280
+GT0979,What is the line total for order item ITM00099?,INR 198918
+GT0980,What is the line total for order item ITM00100?,INR 16950
+GT0981,What is the line total for order item ITM00101?,INR 24596
+GT0982,What is the line total for order item ITM00102?,INR 84336
+GT0983,What is the line total for order item ITM00103?,INR 179470
+GT0984,What is the line total for order item ITM00104?,INR 75998
+GT0985,What is the line total for order item ITM00105?,INR 187920
+GT0986,What is the line total for order item ITM00106?,INR 17936
+GT0987,What is the line total for order item ITM00107?,INR 13686
+GT0988,What is the line total for order item ITM00108?,INR 63710
+GT0989,What is the line total for order item ITM00109?,INR 5128
+GT0990,What is the line total for order item ITM00110?,INR 71940
+GT0991,What is the line total for order item ITM00111?,INR 174146
+GT0992,What is the line total for order item ITM00112?,INR 27846
+GT0993,What is the line total for order item ITM00113?,INR 150740
+GT0994,What is the line total for order item ITM00114?,INR 40308
+GT0995,What is the line total for order item ITM00115?,INR 8010
+GT0996,What is the line total for order item ITM00116?,INR 65106
+GT0997,What is the line total for order item ITM00117?,INR 157596
+GT0998,What is the line total for order item ITM00118?,INR 34980
+GT0999,What is the line total for order item ITM00119?,INR 148158
+GT1000,What is the line total for order item ITM00120?,INR 14130

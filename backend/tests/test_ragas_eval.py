@@ -68,6 +68,20 @@ def _write_csv(path: Path, rows: list[dict]) -> Path:
     return path
 
 
+def test_graph_context_keeps_query_semantics_with_returned_rows():
+    context = eval_rag._graph_context(
+        {
+            "cypher": "MATCH (n:LedgerEntry) RETURN count(n) AS count",
+            "rows": [{"count": 110}],
+        }
+    )
+
+    assert len(context) == 1
+    assert "RETURN count(n) AS count" in context[0]
+    assert '"count": 110' in context[0]
+    assert eval_rag._graph_context({"cypher": "MATCH (n) RETURN n", "rows": []}) == []
+
+
 # ------------------------------------------------------------------ test set files
 def test_test_sets_in_csv_jsonl_and_json(tmp_path):
     a = eval_rag.load_testset(
@@ -145,6 +159,7 @@ def test_evaluation_scores_every_question_and_saves_files_and_rows(judge, docs_k
 
     out = capsys.readouterr().out
     assert "RAGAS results for" in out and "faithfulness" in out and str(folder) in out
+    assert "scored" not in out and "change since last run" not in out
 
     # a second run is compared with the first
     again = eval_rag.run(docs_kb, testset, metrics=["faithfulness"], limit=2)

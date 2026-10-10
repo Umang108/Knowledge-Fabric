@@ -24,7 +24,6 @@ from app.tabular import TabularError
 router = APIRouter(prefix="/api", tags=["knowledge bases"])
 
 GRAPH_EXT = (".csv", ".xlsx", ".xlsm")
-MAX_UPLOAD_MB = 50
 
 
 def _save_upload(kb_name: str, upload: UploadFile, allowed: tuple) -> tuple[str, str]:
@@ -36,9 +35,10 @@ def _save_upload(kb_name: str, upload: UploadFile, allowed: tuple) -> tuple[str,
     dest = folder / f"{uuid.uuid4().hex[:8]}_{name}"
     with dest.open("wb") as f:
         shutil.copyfileobj(upload.file, f)
-    if dest.stat().st_size > MAX_UPLOAD_MB * 1024 * 1024:
+    max_upload_mb = get_settings().upload_max_mb
+    if dest.stat().st_size > max_upload_mb * 1024 * 1024:
         dest.unlink()
-        raise HTTPException(413, f"{name} is larger than {MAX_UPLOAD_MB} MB")
+        raise HTTPException(413, f"{name} is larger than {max_upload_mb} MB")
     if dest.stat().st_size == 0:
         dest.unlink()
         raise HTTPException(422, f"{name} is empty")
@@ -481,7 +481,11 @@ def chat_with_kb(kb_name: str, body: ChatBody, user: CurrentUser = Depends(curre
         history = conversations.history(conv["id"])
     else:
         conv = conversations.create(user, kb_name, question)
-        history = [{k: str(h.get(k, ""))[:2000] for k in ("question", "answer", "cypher")} for h in body.history[-5:]]
+        settings = get_settings()
+        history = [
+            {k: str(h.get(k, ""))[: settings.chat_history_max_chars] for k in ("question", "answer", "cypher")}
+            for h in body.history[-settings.conversation_history_turns :]
+        ]
     operation = "chat" if cat["kb_type"] == "graph" else "rag_chat"
     # the conversation is the Langfuse session, so all turns of one chat are grouped
     with trace_context(user.user_id, body.session_id or f"chat-{conv['id']}", operation, kb_name):

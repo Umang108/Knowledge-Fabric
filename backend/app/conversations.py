@@ -1,4 +1,4 @@
-"""Saved chat conversations: each user keeps their last KEEP conversations (older ones are deleted when a new one
+"""Saved chat conversations: each user keeps the configured number of conversations (older ones are deleted when a new one
 starts). A conversation belongs to one knowledge base; it is only shown while the user can still access that
 knowledge base. Follow-up questions use the saved turns as history (not history sent by the browser)."""
 
@@ -8,10 +8,8 @@ from fastapi import HTTPException
 
 from app import kb
 from app.auth import CurrentUser
+from app.config import get_settings
 from app.db import get_conn
-
-KEEP = 10
-HISTORY_TURNS = 5
 
 
 def _title(question: str) -> str:
@@ -30,7 +28,7 @@ def create(user: CurrentUser, kb_name: str, question: str) -> dict:
             """DELETE FROM chat_conversations WHERE user_id = %s AND id NOT IN (
                    SELECT id FROM chat_conversations WHERE user_id = %s
                    ORDER BY last_message_at DESC, id DESC LIMIT %s)""",
-            (user.user_id, user.user_id, KEEP),
+            (user.user_id, user.user_id, get_settings().conversation_retention_count),
         )
     return conv
 
@@ -52,7 +50,7 @@ def history(conversation_id: int) -> list[dict]:
         rows = conn.execute(
             """SELECT question, answer, details FROM chat_messages WHERE conversation_id = %s
                ORDER BY id DESC LIMIT %s""",
-            (conversation_id, HISTORY_TURNS),
+            (conversation_id, get_settings().conversation_history_turns),
         ).fetchall()
     return [
         {"question": r["question"], "answer": r["answer"], "cypher": (r["details"] or {}).get("cypher") or ""}
@@ -82,7 +80,7 @@ def list_recent(user: CurrentUser) -> list[dict]:
                FROM chat_conversations c
                JOIN knowledge_bases k ON k.kb_name = c.kb_name AND k.user_id = c.user_id
                WHERE c.user_id = %s ORDER BY c.last_message_at DESC, c.id DESC LIMIT %s""",
-            (user.user_id, KEEP),
+            (user.user_id, get_settings().conversation_retention_count),
         ).fetchall()
     return [dict(r) for r in rows]
 

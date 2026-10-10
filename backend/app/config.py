@@ -10,24 +10,47 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         extra="ignore",
+        case_sensitive=False,
     )
 
+    # ---------- application ----------
+    app_name: str = "TCS Knowledge Fabric API"
+    log_level: str = "INFO"
+    csrf_header: str = "X-Requested-With"
+    csrf_value: str = "graphbase"
+
+    # ---------- PostgreSQL ----------
     postgres_host: str = "localhost"
     postgres_port: int = 5433
     postgres_db: str = "graphbase"
     postgres_user: str = "postgres"
     postgres_password: str = ""
+    postgres_pool_min_size: int = 1
+    postgres_pool_max_size: int = 10
+    postgres_connect_timeout_seconds: int = 3
+    postgres_migration_lock: int = 72_011_001
+    health_check_timeout_seconds: int = 3
+    startup_warning_limit: int = 10
 
+    # ---------- Neo4j ----------
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = ""
     neo4j_mode: str = "single"  # single | multi
+    neo4j_pool_size: int = 20
+    neo4j_read_limit: int = 200
+    neo4j_read_timeout_seconds: float = 30.0
+    neo4j_write_batch_size: int = 1000
 
+    # ---------- TurboQuant ----------
     # RAG vector store: TurboQuant indexes (app/vectorstore.py). The backend and the MCP server must use the same
     # folder. Default: backend/data/vectors.
     vector_dir: str = str(Path(__file__).resolve().parents[1] / "data" / "vectors")
     turboquant_bits: int = 4  # bits per coordinate for new indexes: 4 (most accurate), 3 or 2 (smallest)
+    vector_index_suffix: str = ".tvim"
+    vector_lock_namespace: int = 72_011_002
 
+    # ---------- LLM / embeddings ----------
     llm_provider: str = "ollama"  # ollama | azure
     ollama_base_url: str = "http://localhost:11434"
     ollama_chat_model: str = "qwen2.5:7b-instruct"
@@ -41,12 +64,22 @@ class Settings(BaseSettings):
     guardrail_mask_pii: str = "high"  # mask PII at/above this NIST impact level: none | low | moderate | high
     guardrail_min_relevance: float = 0.0  # documents: below this best-passage score answer "not found" (0 = off)
     guardrail_llm_check: bool = False  # extra model-based screening of questions (adds one LLM call)
+    guardrail_max_question_chars: int = 2000
+
+    # ---------- RAG ----------
+    rag_chunk_size: int = 900
+    rag_chunk_overlap: int = 150
+    rag_embedding_batch_size: int = 32
+    rag_retrieval_top_k: int = 6
 
     # RAGAS evaluation (python -m app.cli eval-rag; app/eval_rag.py). Empty = use the app's own chat / embedding
     # model as the judge. A stronger judge than the model under test gives more reliable scores.
     ragas_judge_model: str = ""  # Azure deployment name or Ollama model
     ragas_judge_embed_model: str = ""
     ragas_report_dir: str = str(Path(__file__).resolve().parents[1] / "reports" / "ragas")
+    ragas_metric_timeout_seconds: int = 300
+    ragas_judge_max_tokens: int = 4096
+    ragas_default_concurrency: int = 4
 
     # Langfuse tracing (app/observability.py); off unless both keys are set
     langfuse_secret_key: str = ""
@@ -98,6 +131,29 @@ class Settings(BaseSettings):
     mcp_required_scopes: str = ""  # comma-separated scopes every token must carry, e.g. "graphbase"
     mcp_auto_provision_users: bool = True  # create the users row on a Keycloak user's first MCP call
     mcp_max_rows: int = 200  # cap on rows returned by query_graph
+
+    # ---------- data processing ----------
+    upload_max_mb: int = 50
+    tabular_header_scan_rows: int = 15
+    loader_max_reported_rejections: int = 5000
+    connector_max_rows: int = 50_000
+    extraction_max_rows_to_llm: int = 60
+    chat_max_rows_to_llm: int = 60
+    chat_max_path_rows: int = 20
+    chat_prompt_result_limit: int = 50
+    chat_history_max_chars: int = 2000
+    extraction_fixpoint_max_iterations: int = 10
+    job_error_max_chars: int = 2000
+    auth_default_token_expiry_seconds: int = 300
+    conversation_retention_count: int = 10
+    conversation_history_turns: int = 5
+    auth_last_seen_resolution_seconds: int = 60
+    auth_login_request_ttl_minutes: int = 10
+    keycloak_jwks_cache_seconds: int = 3600
+    keycloak_token_timeout_seconds: int = 15
+    keycloak_logout_timeout_seconds: int = 10
+    connector_timeout_seconds: int = 60
+    connector_connect_timeout_seconds: int = 15
 
     @property
     def postgres_dsn(self) -> str:

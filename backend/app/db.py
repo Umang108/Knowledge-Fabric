@@ -10,8 +10,6 @@ from psycopg_pool import ConnectionPool
 from app.config import get_settings
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-_MIGRATION_LOCK = 72_011_001  # arbitrary advisory-lock id
-
 _pool: ConnectionPool | None = None
 
 
@@ -19,7 +17,11 @@ def open_pool() -> ConnectionPool:
     global _pool
     if _pool is None:
         _pool = ConnectionPool(
-            get_settings().postgres_dsn, min_size=1, max_size=10, kwargs={"row_factory": dict_row}, open=True
+            get_settings().postgres_dsn,
+            min_size=get_settings().postgres_pool_min_size,
+            max_size=get_settings().postgres_pool_max_size,
+            kwargs={"row_factory": dict_row},
+            open=True,
         )
     return _pool
 
@@ -41,8 +43,14 @@ def get_conn():
 def run_migrations(dsn: str | None = None) -> list[str]:
     """Apply migrations/NNN_*.sql in order, each once. Safe to call concurrently."""
     applied = []
-    with psycopg.connect(dsn or get_settings().postgres_dsn, autocommit=True) as conn:
-        conn.execute("SELECT pg_advisory_lock(%s)", (_MIGRATION_LOCK,))
+    settings = get_settings()
+    with psycopg.connect(
+        dsn or settings.postgres_dsn,
+        autocommit=True,
+        connect_timeout=settings.postgres_connect_timeout_seconds,
+    ) as conn:
+        lock_id = settings.postgres_migration_lock
+        conn.execute("SELECT pg_advisory_lock(%s)", (lock_id,))
         try:
             conn.execute("""CREATE TABLE IF NOT EXISTS schema_migrations (
                                 version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())""")
@@ -55,5 +63,5 @@ def run_migrations(dsn: str | None = None) -> list[str]:
                     conn.execute("INSERT INTO schema_migrations (version) VALUES (%s)", (path.stem,))
                 applied.append(path.stem)
         finally:
-            conn.execute("SELECT pg_advisory_unlock(%s)", (_MIGRATION_LOCK,))
+            conn.execute("SELECT pg_advisory_unlock(%s)", (lock_id,))
     return applied

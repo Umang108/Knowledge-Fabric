@@ -15,6 +15,7 @@ import getpass
 import sys
 
 from app.auth import hash_password, revoke_user_sessions
+from app.config import get_settings
 from app.db import get_conn, run_migrations
 
 EVAL_METRICS = ("faithfulness", "answer_relevancy", "context_precision", "context_recall", "factual_correctness")
@@ -87,7 +88,12 @@ def main(argv=None):
     )
     ev.add_argument("--judge-embed-model", help="judge embedding model (default the app's)")
     ev.add_argument("--limit", type=int, help="only the first N questions")
-    ev.add_argument("--concurrency", type=int, default=4, help="metric calls in parallel (default 4)")
+    ev.add_argument(
+        "--concurrency",
+        type=int,
+        default=None,
+        help="metric calls in parallel (default RAGAS_DEFAULT_CONCURRENCY)",
+    )
     ev.add_argument("--user", default="ragas-eval", help="name recorded as the run's author and Langfuse user")
     ev.add_argument("--min-score", type=float, help="exit with code 1 if any metric's average is below this")
     sd = sub.add_parser("seed-demo-data")

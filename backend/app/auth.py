@@ -33,10 +33,6 @@ from app.db import get_conn
 
 # Checked against when the user doesn't exist, so response time doesn't reveal valid user IDs.
 _DUMMY_HASH = bcrypt.hashpw(b"not-a-real-password", bcrypt.gensalt()).decode()
-LAST_SEEN_RESOLUTION = dt.timedelta(seconds=60)  # don't write to the sessions table on every request
-LOGIN_REQUEST_TTL = dt.timedelta(minutes=10)
-
-
 @dataclass
 class CurrentUser:
     user_id: str
@@ -230,7 +226,8 @@ def current_user(request: Request) -> CurrentUser:
     if row["auth_source"] == "keycloak" and row["kc_access_expires_at"] and now >= row["kc_access_expires_at"]:
         _refresh_keycloak_session(session_id, row, s)
     idle = dt.timedelta(minutes=s.session_idle_minutes)
-    if now - row["last_seen_at"] > LAST_SEEN_RESOLUTION or row["idle_expires_at"] - now < idle - LAST_SEEN_RESOLUTION:
+    resolution = dt.timedelta(seconds=get_settings().auth_last_seen_resolution_seconds)
+    if now - row["last_seen_at"] > resolution or row["idle_expires_at"] - now < idle - resolution:
         with get_conn() as conn:
             conn.execute(
                 "UPDATE sessions SET last_seen_at = now(), idle_expires_at = %s WHERE id = %s",
@@ -263,7 +260,7 @@ def _oidc_backchannel(s: Settings) -> str:
 
 @lru_cache
 def _jwks_client(certs_url: str) -> jwt.PyJWKClient:
-    return jwt.PyJWKClient(certs_url, cache_keys=True, lifespan=3600)
+    return jwt.PyJWKClient(certs_url, cache_keys=True, lifespan=get_settings().keycloak_jwks_cache_seconds)
 
 
 def redirect_uri(request: Request, s: Settings) -> str:
@@ -291,7 +288,13 @@ def keycloak_authorize_url(request: Request, next_path: str | None) -> str:
         conn.execute(
             """INSERT INTO oidc_login_requests (state, code_verifier, nonce, next_path, expires_at, modified_by)
                VALUES (%s, %s, %s, %s, %s, 'system')""",
-            (state, verifier, nonce, safe_next(next_path), _now() + LOGIN_REQUEST_TTL),
+            (
+                state,
+                verifier,
+                nonce,
+                safe_next(next_path),
+                _now() + dt.timedelta(minutes=get_settings().auth_login_request_ttl_minutes),
+            ),
         )
     params = {
         "client_id": s.keycloak_client_id,
@@ -311,7 +314,11 @@ def _token_request(s: Settings, data: dict) -> dict:
     if s.keycloak_client_secret:
         data["client_secret"] = s.keycloak_client_secret
     try:
-        r = httpx.post(f"{_oidc_backchannel(s)}/token", data=data, timeout=15)
+        r = httpx.post(
+            f"{_oidc_backchannel(s)}/token",
+            data=data,
+            timeout=get_settings().keycloak_token_timeout_seconds,
+        )
     except httpx.HTTPError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Keycloak is unreachable") from exc
     if r.status_code != 200:
@@ -402,7 +409,10 @@ def _refresh_keycloak_session(session_id: str, row: dict, s: Settings) -> None:
             (
                 encrypt(tokens.get("refresh_token") or refresh),
                 encrypt(tokens.get("id_token")),
-                _now() + dt.timedelta(seconds=int(tokens.get("expires_in", 300))),
+                _now()
+                + dt.timedelta(
+                    seconds=int(tokens.get("expires_in", get_settings().auth_default_token_expiry_seconds))
+                ),
                 session_id,
             ),
         )
@@ -418,4 +428,8 @@ def keycloak_logout(encrypted_refresh_token: str | None) -> None:
     if s.keycloak_client_secret:
         data["client_secret"] = s.keycloak_client_secret
     with contextlib.suppress(httpx.HTTPError):
-        httpx.post(f"{_oidc_backchannel(s)}/logout", data=data, timeout=10)
+        httpx.post(
+            f"{_oidc_backchannel(s)}/logout",
+            data=data,
+            timeout=get_settings().keycloak_logout_timeout_seconds,
+        )

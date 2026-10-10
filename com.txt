@@ -1,6 +1,6 @@
-python -m app.cli eval-ragas --kb finance_ledger_kg --testset eval\testsets\finance_ledger_graph.csv
+python -m app.cli eval-ragas --kb Knowledge_Fabric_Test_Dataset_1000_Rows_Ground_Truth_kg --testset eval\testsets\Knowledge_Fabric_RAGAS_Complex_Questions.csv
 
 
 
-python -m app.cli eval-ragas --kb returns_policy_rag --testset eval\testsets\retail_policies_rag.csv
+python -m app.cli eval-ragas --kb northstar_rag_test_handbook_10_pages_rag --testset eval\testsets\northstar_ragas_evaluation.csv
 

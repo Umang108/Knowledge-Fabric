@@ -15,7 +15,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
-MAX_HEADER_SCAN = 15
+from app.config import get_settings
 
 
 class TabularError(ValueError):
@@ -178,8 +178,9 @@ def _rows_from_csv(data: bytes) -> list[list]:
 
 
 def _find_header(rows: list[list]) -> int | None:
-    width = max((sum(not is_blank(c) for c in r) for r in rows[:MAX_HEADER_SCAN]), default=0)
-    for i, r in enumerate(rows[:MAX_HEADER_SCAN]):
+    header_scan = get_settings().tabular_header_scan_rows
+    width = max((sum(not is_blank(c) for c in r) for r in rows[:header_scan]), default=0)
+    for i, r in enumerate(rows[:header_scan]):
         cells = [c for c in r if not is_blank(c)]
         if (
             len(cells) >= max(2, round(0.6 * width))
@@ -247,7 +248,7 @@ def read_table_file(path: str | Path, original_name: str | None = None) -> list[
     if not sheets:
         if tables_found:
             raise TabularError("The file has a header but no data rows.")
-        raise TabularError(f"No table found: no sheet has a header row in its first {MAX_HEADER_SCAN} rows.")
+        raise TabularError(f"No table found: no sheet has a header row in its first {header_scan} rows.")
     return sheets
 
 

@@ -28,8 +28,6 @@ from app.config import get_settings
 
 log = logging.getLogger(__name__)
 
-MAX_QUESTION_CHARS = 2000
-
 _INJECTION = re.compile(
     r"ignore\s+(all\s+|any\s+|the\s+)?(previous|prior|above|earlier|your)\s+(instructions|prompts?|rules)"
     r"|disregard\s+(all\s+|the\s+|your\s+)?(previous\s+|prior\s+)?(instructions|rules|guidelines)"
@@ -62,7 +60,7 @@ _HARMFUL = re.compile(
 
 MESSAGES = {
     "empty": "Please type a question.",
-    "too_long": f"Please keep questions under {MAX_QUESTION_CHARS} characters.",
+    "too_long": "The question is longer than the configured maximum.",
     "prompt_injection": "I can't change how I work or share my instructions. Ask me about the data in this "
     "knowledge base instead.",
     "write_request": "I can only read from knowledge bases, not change them. To change the data, add or "
@@ -93,7 +91,7 @@ def check_question(question: str) -> Report:
     rule = None
     if not q:
         rule = "empty"
-    elif len(q) > MAX_QUESTION_CHARS:
+    elif len(q) > get_settings().guardrail_max_question_chars:
         rule = "too_long"
     elif _INJECTION.search(q):
         rule = "prompt_injection"
@@ -107,7 +105,12 @@ def check_question(question: str) -> Report:
         rule = _llm_check(q)
     if rule:
         report.blocked = rule
-        report.add(rule, "question blocked")
+        detail = (
+            f"question exceeds {get_settings().guardrail_max_question_chars} characters"
+            if rule == "too_long"
+            else "question blocked"
+        )
+        report.add(rule, detail)
         log.info("guardrail blocked a question: %s", rule)
     return report
 

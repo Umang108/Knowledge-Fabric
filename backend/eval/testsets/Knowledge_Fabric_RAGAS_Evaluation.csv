@@ -1,0 +1,26 @@
+id,question,reference
+001,Which supplier supplies product PRD0001?,Supplier SUP0008 supplies product PRD0001.
+002,Which customer placed order ORD000001?,Order ORD000001 belongs to customer CUS00012.
+003,Which warehouse is assigned to order ORD000001?,Order ORD000001 is assigned to warehouse WH004.
+004,What is the returns window?,Customers may request a return within 30 calendar days of delivery.
+005,How long are refunds processed after inspection?,Refunds are processed within 7 business days after inspection.
+006,When should inventory be reordered?,"Reorder when available stock, calculated as stock minus reserved units, falls below the product reorder level."
+007,Can a shipped order be cancelled?,No. Shipped or Delivered orders cannot be cancelled; customers must use the returns process.
+008,What should happen when an order references a nonexistent customer?,The row should be rejected and reported rather than silently accepted.
+009,Which payment statuses count as completed receipts?,Only transactions with Completed status count as completed receipts; Pending and Failed do not.
+010,Which product categories exist in the dataset?,"Electronics, Home Appliances, Office Supplies, Furniture, Packaging, and Safety Equipment."
+011,How many warehouses are defined?,There are 25 warehouses.
+012,What is the credit-hold rule for customers marked On Hold?,Finance approval is required before new orders are released.
+013,What is the stock available for inventory row INV000001?,Stock units 37 minus reserved units 11 equals 26 available units.
+014,Which supplier tier is assigned to SUP0001?,Silver
+015,What is the duplicate record policy when attributes conflict?,A repeated business key with conflicting attributes must be flagged for review.
+016,Which entities are connected by SUPPLIES?,A Supplier node is connected to a Product node by the SUPPLIES relationship.
+017,What fields should be recorded for a delivery exception?,"Event type, event date, and location should be recorded."
+018,What is the payment method for transaction TXN0000001?,NEFT
+019,Does product PRD0001 have an existing supplier reference?,"Yes. Its supplier_id is SUP0008, which exists in the Suppliers sheet."
+020,Can discontinued products be reordered?,No. Discontinued products must not be reordered.
+021,Which order items belong to order ORD000001?,Return all rows in Order_Items whose order_id is ORD000001.
+022,Which transactions are linked to order ORD000001?,"Return all transactions whose order_id is ORD000001, including transaction type, amount, and status."
+023,"If stock is 30 and reserved units are 12, what is available stock?",Available stock is 18 units.
+024,What is the expected action for a row missing a required identifier?,Reject the row and report the issue.
+025,Can the system answer the salary of an employee from this workbook?,The workbook does not contain employee salary information; the system should say the information is unavailable.

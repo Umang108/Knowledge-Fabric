@@ -14,14 +14,21 @@ import re
 from collections import Counter, defaultdict
 
 from app import graph_schema as gs
-from app import nist_pii, rules
+from app import nist_pii, pii_detection, pii_review
 from app.config import get_settings
 from app.llm import ask_json
 from app.tabular import Sheet, coerce, is_blank, norm_key
 
 log = logging.getLogger(__name__)
 
-PII_CATEGORIES = list(nist_pii.CATEGORIES)  # NIST SP 800-122 based categories (app/nist_pii.py)
+PII_CATEGORIES = pii_review.PII_CATEGORIES
+PII_SOURCES = pii_review.PII_SOURCES
+PII_STATUSES = pii_review.PII_STATUSES
+PII_SYSTEM = pii_detection.PII_SYSTEM
+PII_PROMPT = pii_detection.PII_PROMPT
+active_pii = pii_review.active_pii
+clean_pii = pii_review.clean_pii
+pii_targets = pii_review.pii_targets
 LINK_OVERLAP = 0.6
 UNIQUE = 0.95  # distinct ratio treated as unique (tolerates a few duplicate rows)
 
@@ -147,38 +154,6 @@ Return one JSON object. Use exact sheet and column names from the data:
     "evidence": "brief explanation grounded in the rows",
     "confidence": 0.0
 }}]}}"""
-
-PII_SYSTEM = (
-    "You are a data-privacy auditor applying NIST SP 800-122 (PII confidentiality) and the NIST Privacy Framework. "
-    "You classify spreadsheet columns. Reply with one JSON object only."
-)
-
-PII_PROMPT = """Classify every column of sheet "{sheet}" for personal data (PII) about individual people.
-
-Columns (type; example values):
-{columns}
-
-{data_instruction}
-
-PII (NIST SP 800-122) is information about an individual PERSON that distinguishes or traces their identity
-(direct identifiers) or is linked or linkable to them. For EACH column choose one category:
-Direct identifiers:
-  person_name (a person's full or partial name), email (personal e-mail), phone (personal phone number),
-  address (street/postal address of a person), government_id (SSN, PAN, Aadhaar, passport, driver's licence,
-  tax id), bank_account (bank/IBAN/card number), personal_id (number assigned to a person: patient MRN/UHID,
-  employee or member number), biometric (fingerprint, face image, voice print), online_identifier (IP/MAC
-  address or device id of a person)
-Linked or linkable information about a person:
-  date_of_birth, demographic (gender, race, religion, caste, nationality, marital status), health (diagnosis,
-  condition, allergy, medical history), financial (salary, income, credit score), location (precise GPS of a
-  person), free_text (notes/comments that can mention people)
-or none.
-Not PII (choose none): company/organisation names, product names, cities/regions/countries alone, record IDs of
-orders/invoices/products/tickets, quantities, prices, dates of business events and status values.
-
-JSON, with one entry per column:
-{{"columns": [{{"column": "<name>", "category": "<category>", "confidence": 0.0-1.0}}]}}"""
-
 
 # ------------------------------------------------------------------ profiling helpers
 _ID_NAME = re.compile(
@@ -930,214 +905,21 @@ def name_links(links: list[dict], labels: list[str], sheets: list[Sheet]) -> lis
 
 
 # ------------------------------------------------------------------ step 5: PII
-_NAME_RULES = [
-    (
-        re.compile(r"\b(bank|iban|ifsc|account\s*(no|number))\b", re.I),
-        "bank_account",
-        "high",
-        "column holds bank account details",
-    ),
-    (
-        re.compile(r"\b(dob|date\s*of\s*birth|birth\s*date)\b", re.I),
-        "date_of_birth",
-        "high",
-        "column holds dates of birth",
-    ),
-    (
-        re.compile(r"\b(pan|aadhaar|aadhar|ssn|passport|national\s*id)\b", re.I),
-        "government_id",
-        "high",
-        "column holds a national ID",
-    ),
-    (re.compile(r"\b(address|street)\b", re.I), "address", "medium", "column holds postal addresses"),
-    (
-        re.compile(r"\b(gender|sex|race|ethnicity|religion|caste|nationality|marital[\s_]*status)\b", re.I),
-        "demographic",
-        "medium",
-        "column holds personal characteristics (NIST SP 800-122)",
-    ),
-    (
-        re.compile(r"\b(diagnos\w*|medical[\s_]*(condition|history)|allerg\w*|disease|blood[\s_]*group)\b", re.I),
-        "health",
-        "high",
-        "column holds medical information",
-    ),
-    (
-        re.compile(r"\b(biometric|fingerprint|face[\s_]*(image|id)|voice[\s_]*print)\b", re.I),
-        "biometric",
-        "high",
-        "column holds biometric records",
-    ),
-    (
-        re.compile(r"\b(mrn|uhid|patient[\s_]*(id|no|number)|employee[\s_]*(id|no|number)|emp[\s_]*id)\b", re.I),
-        "personal_id",
-        "medium",
-        "column holds identification numbers assigned to people",
-    ),
-]
-
-_LOCATION_NAME = re.compile(r"latitude|longitude|\blat\b|\blon\b|\bgps\b|geo[\s_]*location|coordinates", re.I)
-_IP_OR_MAC = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}|(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}", re.I)
-
-
-_MACHINE_ID = re.compile(r"[0-9a-f]{16,}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.I)
-
-
-def _machine_ids(texts: list[str]) -> bool:
-    """GUIDs / hex record IDs (ServiceNow sys_id, UUID keys): digit runs inside them aren't phone numbers."""
-    return bool(texts) and sum(bool(_MACHINE_ID.fullmatch(t)) for t in texts) >= 0.9 * len(texts)
-
-
-def rule_pii(sheet: Sheet, column: str) -> dict | None:
-    """Pattern and column-name evidence used to back up the LLM (never stores the values)."""
-    vals = [str(v).strip() for v in sheet.values(column) if not is_blank(v)]
-    if not vals:
-        return None
-    if sheet.profile[column].type in ("string", "date") or (
-        sheet.profile[column].type == "integer" and re.search(r"mrn|uhid|patient|employee|emp", column, re.I)
-    ):
-        for rx, cat, sens, reason in _NAME_RULES:
-            if rx.search(column):
-                return {"category": cat, "sensitivity": sens, "confidence": 0.85, "reason": reason}
-    if _machine_ids(vals):
-        return None
-    n = len(vals)
-    ratio = lambda rx, full=True: sum(bool(rx.fullmatch(v) if full else rx.search(v)) for v in vals) / n  # noqa: E731
-    if ratio(rules.EMAIL) >= 0.5:
-        return {
-            "category": "email",
-            "sensitivity": "medium",
-            "confidence": 0.95,
-            "reason": "values are e-mail addresses",
-        }
-    if ratio(_IP_OR_MAC) >= 0.5:
-        return {
-            "category": "online_identifier",
-            "sensitivity": "medium",
-            "confidence": 0.9,
-            "reason": "values are IP or MAC addresses",
-        }
-    if ratio(rules.PHONE) >= 0.5:
-        return {"category": "phone", "sensitivity": "medium", "confidence": 0.9, "reason": "values are phone numbers"}
-    if ratio(rules.PAN) >= 0.5 or ratio(rules.AADHAAR) >= 0.5:
-        return {
-            "category": "government_id",
-            "sensitivity": "high",
-            "confidence": 0.9,
-            "reason": "values match a national ID format",
-        }
-    if sheet.profile[column].type == "string" and sum(len(v) for v in vals) / n > 15:  # free text
-        hits = sum(bool(rules.EMAIL.search(v) or rules.PHONE.search(v)) for v in vals)
-        if hits and hits / n >= 0.02:
-            return {
-                "category": "free_text",
-                "sensitivity": "medium",
-                "confidence": 0.7,
-                "reason": f"{hits} free-text values contain a phone number or e-mail",
-            }
-    return None
-
-
-
-
-def verify_pii(sheet: Sheet, column: str, category: str) -> bool:
-    """The LLM proposes a category; the values have to be consistent with it."""
-    import datetime as dt
-
-    p = sheet.profile[column]
-    vals = [v for v in sheet.values(column) if not is_blank(v)]
-    if not vals:
-        return False
-    texts = [str(v).strip() for v in vals]
-    share = lambda pred: sum(1 for t in texts if pred(t)) / len(texts)  # noqa: E731
-    if category == "date_of_birth":
-        if re.search(r"dob|birth", column, re.I):
-            return True
-        dates = sorted(d for d in (coerce(v, "date") for v in vals) if d)
-        return bool(dates) and dates[len(dates) // 2] < dt.date.today() - dt.timedelta(days=16 * 365)
-    if category in ("government_id", "bank_account"):
-        rule = rule_pii(sheet, column)
-        return bool(rule and rule["category"] == category)
-    if category == "address":
-        return p.type == "string" and share(lambda t: bool(re.search(r"\d", t)) and len(t.split()) >= 3) >= 0.5
-    if category == "person_name":
-        return (
-            p.type == "string"
-            and not rules.NOT_PERSON_HEADER.search(column)
-            and share(lambda t: 2 <= len(t.split()) <= 5 and not re.search(r"\d", t)) >= 0.7
-            and share(lambda t: bool(rules.COMPANY.search(t))) < 0.2
-        )
-    if category == "email":
-        return share(lambda t: bool(rules.EMAIL.search(t))) >= 0.5
-    if category == "phone":
-        return not _machine_ids(texts) and share(lambda t: bool(rules.PHONE.search(t))) >= 0.5
-    if category == "free_text":
-        return p.type == "string" and not _machine_ids(texts) and sum(len(t) for t in texts) / len(texts) > 15
-    if category == "financial":
-        return bool(re.search(r"salary|income|wage|card|credit|payroll", column, re.I))
-    if category in ("demographic", "health", "biometric", "personal_id"):
-        rule = rule_pii(sheet, column)
-        return bool(rule and rule["category"] == category)
-    if category == "online_identifier":
-        return share(lambda t: bool(_IP_OR_MAC.fullmatch(t))) >= 0.5 or bool(
-            re.search(r"\b(ip|mac)[\s_]*(address)?\b|device[\s_]*id", column, re.I)
-        )
-    if category == "location":
-        return bool(_LOCATION_NAME.search(column))
-    return False
+rule_pii = pii_detection.rule_pii
+verify_pii = pii_detection.verify_pii
 
 
 def detect_pii(sheet: Sheet, columns: list[str]) -> list[dict]:
-    if not columns:
-        return []
-    lines = "\n".join(
-        f'- "{c}": {sheet.profile[c].type}; e.g. {", ".join(sheet.profile[c].samples[:3])}' for c in columns
+    """Keep the extraction API stable while delegating PII work to its domain module."""
+    return pii_detection.detect_pii(
+        sheet,
+        columns,
+        ask_json=ask_json,
+        analysis_data=_analysis_data,
+        fix_column=_fix_column,
+        rule_pii_fn=rule_pii,
+        verify_pii_fn=verify_pii,
     )
-    found = {}
-    for data in _analysis_data(sheet):
-        data_instruction = (
-            "Complete sheet data; classify using every supplied row:\n" + data
-            if get_settings().full_sheet_llm_analysis
-            else "Profile-only analysis is enabled:\n" + data
-        )
-        try:
-            response = ask_json(
-                PII_SYSTEM,
-                PII_PROMPT.format(sheet=sheet.name, columns=lines, data_instruction=data_instruction),
-            )
-            items = response.get("columns") or response.get("pii") or []
-            for item in items:
-                if not isinstance(item, dict):
-                    continue
-                col = _fix_column(item.get("column"), sheet)
-                cat = str(item.get("category") or "none").strip().lower()
-                if col not in columns or cat not in PII_CATEGORIES or cat == "other":
-                    continue
-                try:
-                    conf = min(max(float(item.get("confidence", 0.7)), 0.0), 1.0)
-                except (TypeError, ValueError):
-                    conf = 0.7
-                if conf < 0.5 or not verify_pii(sheet, col, cat):
-                    log.info("PII suggestion rejected by evidence: %s.%s as %s", sheet.name, col, cat)
-                    continue
-                previous = found.get(col)
-                if not previous or conf > previous["confidence"]:
-                    found[col] = {
-                        "column": col,
-                        "category": cat,
-                        "sensitivity": nist_pii.SENSITIVITY[nist_pii.CATEGORIES[cat][2]],
-                        "confidence": conf,
-                        "reason": f"LLM classified the column as {cat.replace('_', ' ')}; values are consistent",
-                        "detected_by": "llm",
-                        "status": "detected",
-                    }
-        except Exception as exc:
-            log.warning("PII detection failed for sheet %s: %s", sheet.name, exc)
-    for col in columns:
-        rule = rule_pii(sheet, col)
-        if rule and col not in found:
-            found[col] = {"column": col, **rule, "detected_by": "rules", "status": "detected"}
-    return list(found.values())
 
 
 # ------------------------------------------------------------------ orchestration
@@ -1225,82 +1007,3 @@ def stored_columns(schema: dict, sheet: str) -> list[str]:
         if r["sheet"] == sheet:
             cols += [p["column"] for p in r["properties"]]
     return list(dict.fromkeys(cols))
-
-
-PII_STATUSES = ("detected", "confirmed", "dismissed")
-PII_SOURCES = ("llm", "rules", "user")
-
-
-def clean_pii(items, sheets: dict) -> list[dict]:
-    """Validate the PII list as edited on the Review screen; one entry per (sheet, column).
-
-    status: "detected" (found by the LLM or the rules, untouched), "confirmed" (a person marked or kept it),
-    "dismissed" (a person said it is not PII; kept so the decision is audited). Raises gs.SchemaError."""
-    if not isinstance(items, list):
-        raise gs.SchemaError(["pii must be a list"])
-    out, errors = {}, []
-    for i, item in enumerate(items, 1):
-        if not isinstance(item, dict):
-            errors.append(f"PII entry {i} is not an object")
-            continue
-        sheet, column = item.get("sheet"), item.get("column")
-        if not isinstance(sheet, str) or sheet not in sheets:
-            errors.append(f"PII entry {i}: unknown sheet {sheet!r}")
-            continue
-        if not isinstance(column, str) or column not in (sheets[sheet] or {}).get("columns", {}):
-            errors.append(f"PII entry {i}: column {column!r} is not in sheet {sheet}")
-            continue
-        category = str(item.get("category") or "").strip().lower()
-        if category not in PII_CATEGORIES:
-            errors.append(f"PII on {sheet}.{column}: category must be one of {', '.join(PII_CATEGORIES)}")
-            continue
-        status = item.get("status") or "detected"
-        if status not in PII_STATUSES:
-            errors.append(f"PII on {sheet}.{column}: status must be one of {', '.join(PII_STATUSES)}")
-            continue
-        source = item.get("detected_by") if item.get("detected_by") in PII_SOURCES else "user"
-        try:
-            confidence = min(max(float(item.get("confidence", 1.0)), 0.0), 1.0)
-        except (TypeError, ValueError):
-            confidence = 1.0
-        reason = str(item.get("reason") or ("Marked as PII on the Review screen" if source == "user" else ""))
-        out[(sheet, column)] = {
-            "sheet": sheet,
-            "column": column,
-            "category": category,
-            "confidence": round(confidence, 3),
-            "reason": reason[:300],
-            "detected_by": source,
-            "status": status,
-        }
-    if errors:
-        raise gs.SchemaError(errors)
-    return nist_pii.assess(list(out.values()), sheets)
-
-
-def active_pii(schema: dict) -> list[dict]:
-    """PII entries that count as PII (not dismissed by a reviewer)."""
-    return [p for p in schema.get("pii", []) if p.get("status", "detected") != "dismissed"]
-
-
-def pii_targets(schema: dict) -> list[dict]:
-    """PII entries (dismissed ones included, for the audit) mapped onto current node/relationship property
-    names, for kb_pii_fields."""
-    out = []
-    for item in schema.get("pii", []):
-        item = {**item, "status": item.get("status", "detected")}
-        for n in schema["nodes"]:
-            if n["sheet"] != item["sheet"]:
-                continue
-            if n["key"]["column"] == item["column"]:
-                out.append({**item, "node_label": n["label"], "property_name": n["key"]["name"]})
-            for p in n.get("properties", []):
-                if p["column"] == item["column"]:
-                    out.append({**item, "node_label": n["label"], "property_name": p["name"]})
-        for r in schema["relationships"]:
-            if r["sheet"] != item["sheet"]:
-                continue
-            for p in r["properties"]:
-                if p["column"] == item["column"]:
-                    out.append({**item, "node_label": r["type"], "property_name": p["name"]})
-    return out

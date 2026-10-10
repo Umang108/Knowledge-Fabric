@@ -1,0 +1,31 @@
+﻿id,question,reference
+1,What is the reorder point and target replenishment quantity for Beacon BCN-220?,"The reorder point for Beacon BCN-220 is 25 units, and its target replenishment quantity is 75 units."
+2,"Which person approves a credit note of ₹65,000?","Credit notes above ₹50,000 require approval from both Omar Fernandes and Mira Sen. Therefore, a credit note of ₹65,000 requires approval from Omar Fernandes and Mira Sen."
+3,Can a used Comet CMT-050 maintenance kit be returned to stock?,No. Used Comet CMT-050 consumables cannot be returned to stock.
+4,What event changes an order's status to Dispatched?,A recorded carrier scan changes an order's status to Dispatched. A tracking number without a carrier scan is not sufficient.
+5,What is the initial-response target for account AC-317?,Account AC-317 belongs to Riverstone Utilities and has the Enterprise tier. Enterprise cases have an initial-response target of four business hours.
+6,Who owns product compatibility approvals?,Priya Nair owns product specifications and compatibility approvals.
+7,What are the escalation requirements for a P1 incident?,"For a P1 incident, Leena Rao must be notified immediately and an incident bridge must be opened within 15 minutes. P1 incidents also require an incident summary and a corrective-action owner before closure."
+8,When can Finance begin processing a return refund?,"Finance begins refund processing after the warehouse records the inspection outcome and support links the RMA to the original order. The internal target is five business days after both records are complete, excluding bank processing time."
+9,Which product is compatible with the Comet CMT-050 maintenance kit?,The Comet CMT-050 maintenance kit is approved for Aster AST-100 sensors only. It is not approved for Beacon BCN-220 devices.
+10,When is the overdue-invoice report published?,Finance publishes the overdue-invoice report every Monday at 10:00.
+11,What is the warranty period for the Aster AST-100 sensor?,The Aster AST-100 sensor has a 24-month limited warranty from the recorded delivery date.
+12,What measurement range does the Beacon BCN-220 pressure sensor support?,The Beacon BCN-220 pressure sensor supports a range of 0–16 bar.
+13,"What are the initial-response targets for Standard, Priority, and Enterprise cases?","Standard cases have an initial-response target of two business days, Priority cases have a target of eight business hours, and Enterprise cases have a target of four business hours."
+14,What should happen if the available stock is lower than the requested order quantity?,The order remains in Validated status and cannot become Reserved until the customer accepts a split shipment or replenishment is received.
+15,What information is required for a stock adjustment?,"A stock adjustment requires a SKU, quantity change, reason code, evidence note, and approver."
+16,Within how many days must a customer request a return authorization for an unopened product?,A customer must request a return authorization within 30 calendar days of delivery for an unopened product.
+17,How long does Finance target for refund processing after the required records are complete?,The internal target is five business days after both the warehouse inspection outcome and the support-to-order RMA linkage are complete. Bank processing time is not included.
+18,What is the difference between a P2 and a P3 support case?,P2 is a production-impacting failure at one site with no safe workaround. P3 is degraded functionality for which a workaround exists.
+19,How long are audit records retained?,Audit records are retained for 24 months.
+20,When should suspected unauthorized access be reported?,Suspected unauthorized access must be reported to the Security and Compliance owner within one hour of discovery.
+21,When is an order eligible for same-day carrier handoff?,"Orders packed before 14:00 local warehouse time are eligible for same-day carrier handoff when the selected carrier has capacity. This is an operational target, not a delivery-date promise."
+22,What payment terms apply by default to Enterprise accounts?,"Enterprise accounts use Net 45 by default. A valid, stored, unexpired signed contract may override the default term."
+23,How often is Aster AST-100 counted during cycle counting?,Aster AST-100 is counted every Monday.
+24,What happens when an invoice is more than 10 calendar days overdue?,Invoices more than 10 calendar days overdue enter the collections review queue.
+25,What fields must every customer support case include?,"Every case must include case ID, account ID, contact channel, product SKU when relevant, priority, concise description, owner, timestamps, and next action."
+26,What is the reorder point and target replenishment quantity for Aster AST-100?,"The reorder point for Aster AST-100 is 40 units, and the target replenishment quantity is 120 units."
+27,What is the reorder point and target replenishment quantity for Comet CMT-050?,"The reorder point for Comet CMT-050 is 60 units, and the target replenishment quantity is 180 units."
+28,What conditions allow an unopened Aster or Beacon unit to be returned to stock?,"An unopened, undamaged Aster or Beacon unit may be returned to stock after serial-number verification."
+29,What happens to a returned product that is damaged?,A damaged returned product is placed in quarantine.
+30,What should support do when an account ID is missing?,Support must verify the registered billing email before changing account data when the account ID is missing.

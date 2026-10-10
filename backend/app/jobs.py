@@ -145,7 +145,7 @@ def submit(
                 conn.execute(
                     """UPDATE jobs SET status = 'failed', error = %s, finished_at = now(),
                                 modified_by = 'system' WHERE id = %s AND status = 'running'""",
-                    (message[:2000], job_id),
+                    (message[: get_settings().job_error_max_chars], job_id),
                 )
             if on_error:
                 on_error(message)

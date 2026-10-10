@@ -43,5 +43,5 @@ def app_info(user: CurrentUser = Depends(current_user)):
         "mcp_url": f"{s.mcp_public_url.rstrip('/')}/mcp",
         "mcp_audience": s.mcp_audience,
         "keycloak_issuer": f"{s.keycloak_url.rstrip('/')}/realms/{s.keycloak_realm}" if s.keycloak_url else None,
-        "conversations_kept": conversations.KEEP,
+        "conversations_kept": get_settings().conversation_retention_count,
     }

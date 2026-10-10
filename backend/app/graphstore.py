@@ -27,7 +27,7 @@ def get_driver() -> Driver:
         if _driver is None:
             s = get_settings()
             _driver = GraphDatabase.driver(
-                s.neo4j_uri, auth=(s.neo4j_user, s.neo4j_password), max_connection_pool_size=20
+                s.neo4j_uri, auth=(s.neo4j_user, s.neo4j_password), max_connection_pool_size=s.neo4j_pool_size
             )
     return _driver
 
@@ -91,7 +91,9 @@ class GraphStore:
             "properties_set": c.properties_set,
         }
 
-    def write_batches(self, query: str, rows: list[dict], batch_size: int = 1000, on_batch=None) -> dict:
+    def write_batches(self, query: str, rows: list[dict], batch_size: int | None = None, on_batch=None) -> dict:
+        if batch_size is None:
+            batch_size = get_settings().neo4j_write_batch_size
         total = {"nodes_created": 0, "relationships_created": 0, "properties_set": 0}
         for i in range(0, len(rows), batch_size):
             for k, v in self.write(query, rows=rows[i : i + batch_size]).items():
@@ -126,7 +128,14 @@ class GraphStore:
         return {"nodes": {r["label"]: r["n"] for r in nodes}, "relationships": {r["type"]: r["n"] for r in rels}}
 
     # -------------------------------------------------------------- chat queries (untrusted Cypher)
-    def run_readonly(self, cypher: str, params: dict | None = None, limit: int = 200, timeout: float = 30.0):
+    def run_readonly(
+        self, cypher: str, params: dict | None = None, limit: int | None = None, timeout: float | None = None
+    ):
+        settings = get_settings()
+        if limit is None:
+            limit = settings.neo4j_read_limit
+        if timeout is None:
+            timeout = settings.neo4j_read_timeout_seconds
         with observe_span("Neo4j", {"knowledge_base": self.kb_name}):
             check_read_only(cypher)
             scoped = scope_cypher(cypher, self.kb_label) if self.kb_label else cypher

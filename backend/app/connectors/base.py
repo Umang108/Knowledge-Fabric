@@ -18,7 +18,6 @@ from app.config import get_settings
 
 log = logging.getLogger(__name__)
 
-MAX_ROWS_DEFAULT = 50_000
 RETRY_STATUS = {429, 502, 503, 504}
 
 
@@ -108,12 +107,16 @@ class Connector:
         self.username = username or None
         self.secret = secret or None
         self.options = options or {}
-        self.max_rows = int(self.options.get("max_rows") or MAX_ROWS_DEFAULT)
+        self.max_rows = int(self.options.get("max_rows") or get_settings().connector_max_rows)
         s = get_settings()
         verify = s.connector_ca_bundle or True
         if self.options.get("verify_tls") is False:
             verify = False
-        self._client = httpx.Client(timeout=httpx.Timeout(60, connect=15), verify=verify, follow_redirects=False)
+        self._client = httpx.Client(
+            timeout=httpx.Timeout(s.connector_timeout_seconds, connect=s.connector_connect_timeout_seconds),
+            verify=verify,
+            follow_redirects=False,
+        )
         self._token: str | None = None
         self._token_expires = 0.0
 

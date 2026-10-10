@@ -72,16 +72,13 @@ function PropList({ props, pii, sheet }) {
   );
 }
 
-function PropEditor({ props, onChange, sheet, pii, onPii, categories }) {
-  const byKey = new Map(pii.map((p) => [piiKey(p.sheet, p.column), p]));
+function PropEditor({ props, onChange }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {props.map((p, i) => (
         <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
           <input className="inp sm" style={{ width: 120 }} value={p.name} aria-label={`Property ${p.column}`}
                  onChange={(e) => onChange(props.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
-          <PiiControl entry={byKey.get(piiKey(sheet, p.column))} label={p.column} categories={categories}
-                      onChange={(change) => onPii(sheet, p.column, change)} />
           <button type="button" className="btn sec sm" style={{ padding: "0 8px" }} aria-label={`Remove ${p.name}`}
                   onClick={() => onChange(props.filter((_, j) => j !== i))}>×</button>
         </span>
@@ -419,16 +416,12 @@ export default function Review() {
                           <span style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
                             <input className="inp sm" value={d.key.name} aria-label="Key property"
                                    onChange={(e) => set({ key: { ...d.key, name: e.target.value } })} />
-                            <PiiControl entry={editing.pii.find((p) => piiKey(p.sheet, p.column) === piiKey(d.sheet, d.key.column))}
-                                        label={`key ${d.key.column}`} categories={categories}
-                                        onChange={(change) => setDraftPii(d.sheet, d.key.column, change)} />
                           </span>
                         ) : <>{n.key.name}{piiActive(pii.get(piiKey(n.sheet, n.key.column))) && <span className="badge pii">PII</span>}
                               <span className="colsrc">← {n.key.column}</span></>}
                       </td>
                       <td className="strike">
-                        {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })}
-                                                 sheet={d.sheet} pii={editing.pii} onPii={setDraftPii} categories={categories} />
+                        {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })} />
                                    : <PropList props={n.properties} pii={pii} sheet={n.sheet} />}
                       </td>
                       <td style={{ textAlign: "right" }}>{(n.count ?? 0).toLocaleString()}</td>
@@ -495,8 +488,7 @@ export default function Review() {
                         {r.sheet}: <span className="mono">{r.from.column} → {r.to.column}</span>
                       </td>
                       <td className="strike">
-                        {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })}
-                                                 sheet={d.sheet} pii={editing.pii} onPii={setDraftPii} categories={categories} />
+                        {isEditing ? <PropEditor props={d.properties} onChange={(properties) => set({ properties })} />
                                    : <PropList props={r.properties} pii={pii} sheet={r.sheet} />}
                       </td>
                       <td style={{ textAlign: "right" }}>{r.count != null ? r.count.toLocaleString() : "—"}</td>

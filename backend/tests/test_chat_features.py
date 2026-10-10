@@ -186,6 +186,16 @@ def test_graph_answer_masks_high_impact_pii_before_the_model_sees_it(client, cha
     assert "123456789012" not in answer_prompt and "ABCDE1234F" not in answer_prompt
 
 
+def test_graph_prompts_prefer_exact_policy_text_and_calculated_values(client, chat_env):
+    r = client.post(f"/api/kbs/{GRAPH}/chat", headers=login(client), json={"question": "When should inventory be reordered?"})
+    assert r.status_code == 200, r.text
+    planner_prompt, answer_prompt = ScriptedModel.prompts
+    assert "return the full policy text" in planner_prompt
+    assert "alias a single input property" in planner_prompt
+    assert "Answer only what the user explicitly asked" in answer_prompt
+    assert "never substitute one of its input values" in answer_prompt
+
+
 def test_unanswerable_question_is_said_plainly(client, chat_env):
     r = client.post(f"/api/kbs/{GRAPH}/chat", headers=login(client), json={"question": "What is the weather?"})
     body = r.json()
